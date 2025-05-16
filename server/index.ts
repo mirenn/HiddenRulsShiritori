@@ -1,14 +1,41 @@
-import express from 'express';
+import express, { Request, Response } from 'express'; // Request, Response を明示的にインポート
 import http from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fetch from 'node-fetch'; // Gemini API呼び出しのために追加
+import fetch from 'node-fetch';
 
 // 環境変数の読み込み
 dotenv.config();
+
+// グローバルスコープに Gemini API 呼び出し関数を定義
+const callGeminiAPIServer = async (prompt: string): Promise<boolean> => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    console.error('Gemini API key is not set on server.');
+    return false;
+  }
+  const geminiApiEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+  try {
+    const response = await fetch(`${geminiApiEndpoint}?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+    });
+    if (!response.ok) {
+      console.error('Gemini API request failed on server:', response.status, await response.text());
+      return false;
+    }
+    const data: any = await response.json();
+    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase();
+    return resultText === 'はい' || resultText === 'yes';
+  } catch (error) {
+    console.error('Error calling Gemini API on server:', error);
+    return false;
+  }
+};
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -44,8 +71,7 @@ interface HiddenRule {
   id: string; // ルール識別のためにidを追加
   description: string;
   points: number; // ポイントもサーバーで管理
-  // checkFunctionはサーバー内部でのみ使用するため、型定義からは削除しても良いが、
-  // generateHiddenRulesで利用するため残す。クライアントには渡さない。
+  achievedByPlayer: string | null; // どのプレイヤーが達成したか
   checkFunction?: (word: string, apiKey?: string) => Promise<boolean> | boolean;
   needsApi?: boolean; // API呼び出しが必要なルールのフラグ
 }
@@ -60,40 +86,6 @@ const rooms = new Map<string, {
 wss.on('connection', (ws: WebSocket) => {
   let roomCode: string | null = null;
   let playerName: string | null = null;
-
-  // Gemini API呼び出し関数 (サーバーサイド)
-  const callGeminiAPI = async (prompt: string): Promise<boolean> => {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      console.error('Gemini API key is not set on server.');
-      // APIキーがない場合は、安全のためfalseを返すか、エラーを投げる
-      return false;
-    }
-    // TODO: 実際のGemini APIのエンドポイントに置き換えてください
-    const geminiApiEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
-    try {
-      const response = await fetch(`${geminiApiEndpoint}?key=${apiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-        }),
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Gemini API request failed on server:', response.status, errorText);
-        return false;
-      }
-      const data: any = await response.json();
-      const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase();
-      return resultText === 'はい' || resultText === 'yes';
-    } catch (error) {
-      console.error('Error calling Gemini API on server:', error);
-      return false;
-    }
-  };
 
   // メッセージ受信時の処理
   ws.on('message', async (message: string) => { // asyncに変更
@@ -147,7 +139,7 @@ wss.on('connection', (ws: WebSocket) => {
         gameState: {
           ...room.gameState,
           // 隠しルールの詳細(checkFunctionやneedsApi)はクライアントに送信しない
-          hiddenRules: room.gameState.hiddenRules.map(({ id, description, points }) => ({ id, description, points, achievedByPlayer: null }))
+          hiddenRules: room.gameState.hiddenRules.map(({ id, description, points, achievedByPlayer }) => ({ id, description, points, achievedByPlayer }))
         }
       }));
 
@@ -180,7 +172,7 @@ wss.on('connection', (ws: WebSocket) => {
         const prevWord = gameState.history[gameState.history.length - 1];
         const lastChar = prevWord.endsWith('ー') ? prevWord.charAt(prevWord.length - 2) : prevWord.charAt(prevWord.length - 1);
         const firstChar = word.startsWith('ー') ? word.charAt(1) : word.charAt(0);
-        if (firstChar !== lastChar) {
+        if (firstChar.toLowerCase() !== lastChar.toLowerCase()) { // 大文字・小文字を区別しない
           ws.send(JSON.stringify({
             type: 'error',
             message: '前の単語の最後の文字で始めてください'
@@ -190,22 +182,19 @@ wss.on('connection', (ws: WebSocket) => {
       }
 
       // 「ん」で終わるチェック
-      if (word.endsWith('ん') || word.endsWith('ン')) {
-         // 「ん」で終わる単語が隠しルールで許可されているかチェック
-        const nEndingAllowedRule = gameState.hiddenRules.find(rule => rule.id === 'rule_n_ending');
-        let isNEndingAllowed = false;
-        if (nEndingAllowedRule && nEndingAllowedRule.checkFunction) {
-            if (nEndingAllowedRule.needsApi && nEndingAllowedRule.checkFunction) {
-                 isNEndingAllowed = await nEndingAllowedRule.checkFunction(word, process.env.GEMINI_API_KEY);
-            } else if (nEndingAllowedRule.checkFunction) {
-                 isNEndingAllowed = nEndingAllowedRule.checkFunction(word) as boolean;
-            }
+      const nEndingRule = gameState.hiddenRules.find(rule => rule.id === 'rule_n_ending');
+      let isNEndingAllowedByRule = false;
+      if (nEndingRule && nEndingRule.checkFunction) {
+        if (nEndingRule.needsApi) {
+          isNEndingAllowedByRule = await nEndingRule.checkFunction(word, process.env.GEMINI_API_KEY);
+        } else {
+          isNEndingAllowedByRule = nEndingRule.checkFunction(word) as boolean;
         }
+      }
 
-        if (!isNEndingAllowed) {
-            ws.send(JSON.stringify({ type: 'error', message: '「ん」で終わる単語は使えません (特別なルールがない限り)' }));
-            return;
-        }
+      if ((word.endsWith('ん') || word.endsWith('ン')) && !isNEndingAllowedByRule) {
+        ws.send(JSON.stringify({ type: 'error', message: '「ん」で終わる単語は使えません (特別なルールがない限り)' }));
+        return;
       }
 
       // 履歴に追加
@@ -245,7 +234,9 @@ wss.on('connection', (ws: WebSocket) => {
             player: playerName,
             points: pointsGainedThisTurn,
             rulesAchieved: achievedRulesInfo, // 達成したルールの詳細
-            newScore: gameState.scores[playerName]
+            newScore: gameState.scores[playerName],
+            // 更新されたhiddenRulesの状態も送る (achievedByPlayerが更新されているため)
+            updatedHiddenRules: gameState.hiddenRules.map(({ id, description, points, achievedByPlayer }) => ({ id, description, points, achievedByPlayer }))
           }));
         });
       }
@@ -280,7 +271,7 @@ wss.on('connection', (ws: WebSocket) => {
       if (rule && rule.checkFunction) {
         let result = false;
         if (rule.needsApi) {
-          result = await callGeminiAPI(`「${word}」は「${rule.description}」の条件を満たしますか？ はい、いいえで答えてください。`);
+          result = await callGeminiAPIServer(`「${word}」は「${rule.description}」の条件を満たしますか？ はい、いいえで答えてください。`);
         } else {
           result = rule.checkFunction(word) as boolean;
         }
@@ -314,7 +305,7 @@ wss.on('connection', (ws: WebSocket) => {
 // 隠しルールを生成する関数 (サーバーサイドで定義)
 // ルール定義にid, points, needsApi, checkFunctionを追加
 function generateHiddenRules(): HiddenRule[] {
-  const allServerRules: HiddenRule[] = [
+  const allServerRules: Omit<HiddenRule, 'achievedByPlayer'>[] = [
     { id: 'rule1', description: '3文字の単語', points: 1, checkFunction: (word) => word.length === 3 },
     { id: 'rule_n_ending', description: '「ん」で終わる単語 (通常は反則)', points: 2, checkFunction: (word) => word.endsWith('ん') || word.endsWith('ン') },
     { id: 'rule3', description: '食べ物の名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は食べ物の名前ですか？ はい、いいえで答えてください。`) },
@@ -325,43 +316,27 @@ function generateHiddenRules(): HiddenRule[] {
     { id: 'rule8', description: '最後に「り」がつく言葉', points: 1, checkFunction: (word) => word.endsWith('り') },
     { id: 'rule9', description: '「パ」から始まる単語', points: 2, checkFunction: (word) => word.startsWith('パ') },
     { id: 'rule10', description: 'ことわざ (一部合致)', points: 3, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」で始まる、または一部に含むことわざはありますか？ はい、いいえで答えてください。`) },
-    // TODO: ここに新しいルールを追加
+    // 新しいルールバリエーション
+    { id: 'rule11', description: '植物の名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は植物の名前ですか？ はい、いいえで答えてください。`) },
+    { id: 'rule12', description: '乗り物の名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は乗り物の名前ですか？ はい、いいえで答えてください。`) },
+    { id: 'rule13', description: '同じ文字が2つ続く単語 (例: りんご、バナナ)', points: 2, checkFunction: (word) => /(\p{L})\1/u.test(word) }, // Unicode文字プロパティを使用
+    { id: 'rule14', description: '最初の文字と最後の文字が同じ単語', points: 2, checkFunction: (word) => word.length > 1 && word.charAt(0) === word.charAt(word.length - 1) },
+    { id: 'rule15', description: '天候に関する言葉', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は天候に関する言葉ですか？ はい、いいえで答えてください。`) },
+    { id: 'rule16', description: 'スポーツの名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」はスポーツの名前ですか？ はい、いいえで答えてください。`) },
+    { id: 'rule17', description: '「き」で終わる3文字の単語', points: 2, checkFunction: (word) => word.length === 3 && word.endsWith('き') },
+    { id: 'rule18', description: '国名', points: 2, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は国名ですか？ はい、いいえで答えてください。`) },
+    { id: 'rule19', description: '楽器の名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は楽器の名前ですか？ はい、いいえで答えてください。`) },
+    { id: 'rule20', description: 'ひらがなのみで構成される4文字の単語', points: 1, checkFunction: (word) => word.length === 4 && /^[ぁ-んー]+$/.test(word) },
   ];
 
-  // callGeminiAPIServerを定義 (wssスコープ外なのでグローバルに定義するか、渡す必要がある)
-  // 簡単のため、ここでは generateHiddenRules の中で定義するが、実際は外だし推奨
-  const callGeminiAPIServer = async (prompt: string): Promise<boolean> => {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      console.error('Gemini API key is not set on server for rule generation.');
-      return false;
-    }
-    const geminiApiEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
-    try {
-      const response = await fetch(`${geminiApiEndpoint}?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-      });
-      if (!response.ok) {
-        console.error('Gemini API request failed on server (rule gen):', response.status, await response.text());
-        return false;
-      }
-      const data: any = await response.json();
-      const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase();
-      return resultText === 'はい' || resultText === 'yes';
-    } catch (error) {
-      console.error('Error calling Gemini API on server (rule gen):', error);
-      return false;
-    }
-  };
-
   const shuffled = [...allServerRules].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, 3).map(rule => ({ ...rule, achievedByPlayer: null })); // achievedByPlayerを初期化
+  // achievedByPlayer を null で初期化して完全な HiddenRule 型にする
+  return shuffled.slice(0, 3).map(rule => ({ ...rule, achievedByPlayer: null } as HiddenRule));
 }
 
 // ゲーム状態をルーム内の全クライアントに送信
 function broadcastGameState(roomCode: string) {
+  if (!roomCode) return; // roomCodeがnullやundefinedの場合は何もしない
   const room = rooms.get(roomCode);
   if (!room) return;
 
@@ -369,9 +344,7 @@ function broadcastGameState(roomCode: string) {
     type: 'gameState',
     gameState: {
       ...room.gameState,
-      // 隠しルールの詳細(checkFunctionやneedsApi)はクライアントに送信しない
-      // achievedByPlayerもクライアントには直接送信せず、ポイント獲得時に達成されたルールとして通知する
-      hiddenRules: room.gameState.hiddenRules.map(({ id, description, points }) => ({ id, description, points, achievedByPlayer: null /* gameState内のものは更新されているが、クライアントには初期状態またはUI表示用の情報のみ送る*/ }))
+      hiddenRules: room.gameState.hiddenRules.map(({ id, description, points, achievedByPlayer }) => ({ id, description, points, achievedByPlayer }))
     }
   });
 
@@ -381,7 +354,7 @@ function broadcastGameState(roomCode: string) {
 }
 
 // API: Geminiの隠しルール生成APIを実装
-app.post('/api/generate-hidden-rules', async (req, res) => {
+app.post('/api/generate-hidden-rules', async (req: Request, res: Response) => {
   try {
     if (!process.env.GEMINI_API_KEY) {
       return res.status(500).json({ error: 'GEMINI_API_KEYが設定されていません' });
