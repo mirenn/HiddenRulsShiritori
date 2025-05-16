@@ -300,49 +300,53 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 px-2">
-      <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg mx-auto transition-all duration-300 flex flex-col items-center">
-        <h1 className="text-4xl sm:text-5xl font-extrabold mb-8 text-center text-indigo-700 tracking-tight drop-shadow-lg flex flex-col items-center">
-          <span className="inline-block px-6 py-2 bg-gradient-to-r from-indigo-400 via-blue-400 to-indigo-400 text-white rounded-xl shadow-md mb-2">
-            隠しルールしりとり
-          </span>
-          <span className="text-base text-indigo-400 font-medium mt-2 tracking-wide">みんなで推理しながら遊ぼう！</span>
-        </h1>
-        
-        <div className="space-y-6 w-full">
-          <div>
-            <label className="block mb-2 text-gray-700 font-semibold text-lg">ルーム番号（4桁）</label>
-            <input
-              type="text"
-              value={roomCode}
-              onChange={handleInput}
-              className="w-full px-5 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center text-2xl bg-indigo-50 transition-all"
-              maxLength={4}
-            />
+    <div className="bg-white py-6 sm:py-8 lg:py-12 min-h-screen flex items-center">
+      <div className="mx-auto max-w-screen-2xl px-4 md:px-8 w-full">
+        <h2 className="mb-4 text-center text-3xl font-bold text-gray-800 md:mb-8 lg:text-4xl">
+          隠しルールしりとり
+          <span className="block text-base text-indigo-500 font-medium mt-2 tracking-wide">みんなで推理しながら遊ぼう！</span>
+        </h2>
+
+        <form className="mx-auto max-w-lg rounded-lg border shadow-xl">
+          <div className="flex flex-col gap-6 p-6 md:p-8">
+            <div>
+              <label htmlFor="roomCode" className="mb-2 inline-block text-sm text-gray-800 sm:text-base font-semibold">ルーム番号（4桁）</label>
+              <input
+                id="roomCode"
+                type="text"
+                value={roomCode}
+                onChange={handleInput}
+                className="w-full rounded border bg-gray-50 px-4 py-3 text-gray-800 outline-none ring-indigo-300 transition duration-100 focus:ring-2 focus:ring-indigo-500 text-center text-2xl"
+                maxLength={4}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="playerName" className="mb-2 inline-block text-sm text-gray-800 sm:text-base font-semibold">プレイヤー名（10文字以内）</label>
+              <input
+                id="playerName"
+                type="text"
+                value={playerName}
+                onChange={handleNameInput}
+                className="w-full rounded border bg-gray-50 px-4 py-3 text-gray-800 outline-none ring-indigo-300 transition duration-100 focus:ring-2 focus:ring-indigo-500 text-center text-lg"
+                maxLength={10}
+              />
+            </div>
+
+            {playerName && (
+              <div className="flex justify-center my-2">
+                {playerRating}
+              </div>
+            )}
+
+            <button
+              onClick={handleJoin}
+              className="block rounded-lg bg-gradient-to-r from-indigo-500 to-blue-500 px-8 py-3 text-center text-base font-semibold text-white outline-none ring-indigo-300 transition duration-100 hover:from-indigo-600 hover:to-blue-600 focus-visible:ring active:bg-indigo-700 md:text-lg shadow-md hover:shadow-lg"
+            >
+              ルーム作成 / 参加
+            </button>
           </div>
-          
-          <div>
-            <label className="block mb-2 text-gray-700 font-semibold text-lg">プレイヤー名（10文字以内）</label>
-            <input
-              type="text"
-              value={playerName}
-              onChange={handleNameInput}
-              className="w-full px-5 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center text-lg bg-indigo-50 transition-all"
-              maxLength={10}
-            />
-          </div>
-          
-          <div className="flex justify-center mt-2 mb-2">
-            {playerRating}
-          </div>
-          
-          <button
-            onClick={handleJoin}
-            className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl text-lg tracking-wide"
-          >
-            ルーム作成 / 参加
-          </button>
-        </div>
+        </form>
       </div>
     </div>
   )
