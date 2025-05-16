@@ -300,53 +300,77 @@ function App() {
   }
 
   return (
-    <div className="bg-white py-6 sm:py-8 lg:py-12 min-h-screen flex items-center">
-      <div className="mx-auto max-w-screen-2xl px-4 md:px-8 w-full">
-        <h2 className="mb-4 text-center text-3xl font-bold text-gray-800 md:mb-8 lg:text-4xl">
-          隠しルールしりとり
-          <span className="block text-base text-indigo-500 font-medium mt-2 tracking-wide">みんなで推理しながら遊ぼう！</span>
-        </h2>
-
-        <form className="mx-auto max-w-lg rounded-lg border shadow-xl">
-          <div className="flex flex-col gap-6 p-6 md:p-8">
-            <div>
-              <label htmlFor="roomCode" className="mb-2 inline-block text-sm text-gray-800 sm:text-base font-semibold">ルーム番号（4桁）</label>
-              <input
-                id="roomCode"
-                type="text"
-                value={roomCode}
-                onChange={handleInput}
-                className="w-full rounded border bg-gray-50 px-4 py-3 text-gray-800 outline-none ring-indigo-300 transition duration-100 focus:ring-2 focus:ring-indigo-500 text-center text-2xl"
-                maxLength={4}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="playerName" className="mb-2 inline-block text-sm text-gray-800 sm:text-base font-semibold">プレイヤー名（10文字以内）</label>
-              <input
-                id="playerName"
-                type="text"
-                value={playerName}
-                onChange={handleNameInput}
-                className="w-full rounded border bg-gray-50 px-4 py-3 text-gray-800 outline-none ring-indigo-300 transition duration-100 focus:ring-2 focus:ring-indigo-500 text-center text-lg"
-                maxLength={10}
-              />
-            </div>
-
-            {playerName && (
-              <div className="flex justify-center my-2">
-                {playerRating}
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 px-2">
+      <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg mx-auto transition-all duration-300 flex flex-col items-start border-4 border-indigo-600">
+        <h1 className="text-4xl sm:text-5xl font-extrabold mb-8 text-left text-indigo-700 tracking-tight  w-full">
+          <span className="text-black">
+            隠しルールしりとり
+          </span>
+          <br />
+          <span className="text-base text-indigo-400 font-medium mt-2 tracking-wide block text-left">みんなで推理しながら遊ぼう！</span>
+        </h1>
+        
+        <div className="space-y-6 w-full">
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="block text-gray-700 font-semibold text-lg">ルーム番号（4桁）</label>
+              <div className="relative group">
+                <button 
+                  className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </button>
+                <div 
+                  className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-3 bg-gray-800 text-white text-sm rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none group-hover:pointer-events-auto"
+                  role="tooltip"
+                >
+                  <p className="mb-2">友達と遊ぶ場合は、同じ4桁の数字を入力して参加してください。</p>
+                  <p className="mb-2">部屋が存在しない場合は新しい部屋が作成されます。</p>
+                  <a 
+                    href="https://github.com/mirenn/HiddenRulsShiritori#readme"
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-indigo-400 hover:text-indigo-300 underline"
+                  >
+                    詳しい説明はこちら (GitHub)
+                  </a>
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-gray-800"></div>
+                </div>
               </div>
-            )}
-
-            <button
-              onClick={handleJoin}
-              className="block rounded-lg bg-gradient-to-r from-indigo-500 to-blue-500 px-8 py-3 text-center text-base font-semibold text-white outline-none ring-indigo-300 transition duration-100 hover:from-indigo-600 hover:to-blue-600 focus-visible:ring active:bg-indigo-700 md:text-lg shadow-md hover:shadow-lg"
-            >
-              ルーム作成 / 参加
-            </button>
+            </div>
+            <input
+              type="text"
+              value={roomCode}
+              onChange={handleInput}
+              className="w-full px-5 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center text-2xl bg-indigo-50 transition-all"
+              maxLength={4}
+            />
           </div>
-        </form>
+          
+          <div>
+            <label className="block text-gray-700 font-semibold text-lg">プレイヤー名（10文字以内）</label>
+            <input
+              type="text"
+              value={playerName}
+              onChange={handleNameInput}
+              className="w-full px-5 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center text-lg bg-indigo-50 transition-all"
+              maxLength={10}
+            />
+          </div>
+          
+          <div className="flex justify-center mt-2 mb-8">
+            {playerRating}
+          </div>
+          
+          <button
+            onClick={handleJoin}
+            className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl text-lg tracking-wide"
+          >
+            ルーム作成 / 参加
+          </button>
+        </div>
       </div>
     </div>
   )
