@@ -1,54 +1,41 @@
-# React + TypeScript + Vite
+# 隠しルールしりとりゲーム
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## ゲーム概要
 
-Currently, two official plugins are available:
+「隠しルールしりとりゲーム」へようこそ！
+このゲームは、ただのしりとりではありません。相手プレイヤーと競い合いながら、隠された秘密の条件を見つけ出し、ポイントを獲得していく、新感覚の言葉遊びゲームです。先に5ポイント獲得したプレイヤーが勝利となります。
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ゲームの遊び方
 
-## Expanding the ESLint configuration
+### 基本ルール
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- 通常のしりとりと同じように、前の人が言った単語の最後の文字から始まる言葉を答えてください。
+- 一度使った言葉は使えません。
+- 言葉の最後に「ん」がついたら負けです。
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+### 隠しルールとポイント獲得
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+- 各ゲームには、3つの「隠しポイント獲得条件」が設定されています。
+    - 例：「尖ったもの」を表す単語を言うと1ポイント獲得
+    - 例：3文字の単語を言うと1ポイント獲得
+- これらの条件はゲーム開始時には秘密にされています。
+- 条件に合致する単語を言うと、自動的にポイントが加算されます。
+- 相手の言葉や自分の言葉から、隠された条件を推理しながらゲームを進めましょう！
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### 入力について
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+- 単語の入力はひらがなのみ、20文字までです。
+
+## 対戦方法
+
+- このゲームはオンラインでの二人対戦です。
+- 友達と遊ぶ場合は、4桁の数字でルームを作成・入室して対戦できます。
+    - デフォルトのルーム番号は「0000」です。
+
+## レーティングシステム
+
+- ゲームの勝敗に応じて、あなたの強さを示す「レート」が変動します。
+- たくさん遊んで、レートアップを目指しましょう！
+  ※レート情報は、お使いのブラウザに保存されます。
+
+さあ、言葉の知識と推理力を駆使して、隠しルールを見つけ出し、勝利を掴みましょう！
