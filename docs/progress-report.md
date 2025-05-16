@@ -3,23 +3,20 @@
 ## Project: Hidden Rule Shiritori Game
 
 ### Current Progress
-- Project initialized with Vite, React, TypeScript, and TailwindCSS.
-- Room matching UI implemented:
-  - 4-digit room code input (default: 0000)
-  - Player name input
-  - Join/Create Room button
-- After joining, a placeholder Shiritori game screen is displayed with room code and player name.
-- 2-player room state management implemented using localStorage and polling.
-- Shiritori game logic, turn management, input, and history implemented (localStorage sync, 2-player alternation).
+- Initialized with Vite, React, TypeScript, and TailwindCSS.
+- Room matching UI implemented (4-digit code, player name, join/create button).
+- Placeholder game screen displays after joining (shows room code, player name).
+- 2-player room state management using localStorage and polling.
+- Shiritori core logic implemented (game rules, turn management, input, history) with localStorage sync for 2-player alternation.
+- Rating system UI component created (`src/components/RatingDisplay.tsx`).
+- WebSocket connection hook created (`src/hooks/useWebSocket.ts`).
+- Basic server-side structure initiated (`server/index.ts`).
 
 ### Next Steps
-- Add hidden rule/point system
-- Integrate rating system (localStorage)
-- Connect to Google Gemini API for AI features
-- サーバーサイド実装（WebSocket等）によるリアルタイム同期の導入（オンライン対戦ゲームのため必須）
+- Implement hidden rules and point system.
+- Finalize rating system (localStorage).
+- Integrate Google Gemini API.
+- Implement WebSocket-based real-time synchronization (server and client).
 
 ---
-このプロジェクトは現在、フロントエンドのみで2人対戦・しりとりロジック・ターン管理まで実装済みです。
-オンライン対戦ゲームとして安定したリアルタイム同期を実現するため、今後はサーバーサイド（WebSocket等）による実装が必須となります。
-
-This document summarizes the current implementation status. See `game-requirements.md` for full requirements.
+The project currently features front-end implementation for 2-player Shiritori, including game logic and turn management. Server-side WebSocket implementation is a priority for real-time online play. This document summarizes the current implementation status. See `game-requirements.md` for full requirements.
