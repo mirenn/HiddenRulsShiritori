@@ -154,7 +154,7 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
 
   // ゲーム進行中の表示
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-blue-200 p-4">
       <div className="bg-white p-6 sm:p-8 rounded-xl shadow-lg w-full max-w-2xl mx-auto">
         {/* ヘッダー部分 */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-200">
@@ -272,6 +272,7 @@ function App() {
   const [roomCode, setRoomCode] = useState('0000')
   const [joined, setJoined] = useState(false)
   const [playerName, setPlayerName] = useState('')
+  const [nameError, setNameError] = useState('')
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4)
@@ -280,20 +281,23 @@ function App() {
 
   const handleNameInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPlayerName(e.target.value.slice(0, 10))
+    if (e.target.value) {
+      setNameError('')
+    }
   }
 
   const handleJoin = () => {
     if (!playerName) {
-      alert('プレイヤー名を入力してください')
+      setNameError('プレイヤー名は必須です')
       return
     }
     setJoined(true)
   }
 
   // シンプルなプレイヤーレート表示（ログイン画面に追加）
-  const playerRating = playerName ? (
-    <RatingDisplay playerName={playerName} />
-  ) : null
+  // const playerRating = playerName ? (
+  // <RatingDisplay playerName={playerName} />
+  // ) : null
 
   if (joined) {
     return <ShiritoriGame roomCode={roomCode} playerName={playerName} />
@@ -316,7 +320,7 @@ function App() {
               <label className="block text-gray-700 font-semibold text-lg">ルーム番号（4桁）</label>
               <div className="relative group">
                 <button 
-                  className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
+                  className="text-sm text-indigo-600 hover:text-indigo-800 flex items-left"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
@@ -328,6 +332,12 @@ function App() {
                 >
                   <p className="mb-2">友達と遊ぶ場合は、同じ4桁の数字を入力して参加してください。</p>
                   <p className="mb-2">部屋が存在しない場合は新しい部屋が作成されます。</p>
+                  {playerName && (
+                    <div className="my-2">
+                      <p className="font-semibold">あなたの現在のレート:</p>
+                      <RatingDisplay playerName={playerName} />
+                    </div>
+                  )}
                   <a 
                     href="https://github.com/mirenn/HiddenRulsShiritori#readme"
                     target="_blank" 
@@ -344,7 +354,7 @@ function App() {
               type="text"
               value={roomCode}
               onChange={handleInput}
-              className="w-full px-5 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center text-2xl bg-indigo-50 transition-all"
+              className="w-full px-5 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-2xl bg-indigo-50 transition-all"
               maxLength={4}
             />
           </div>
@@ -355,18 +365,25 @@ function App() {
               type="text"
               value={playerName}
               onChange={handleNameInput}
-              className="w-full px-5 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center text-lg bg-indigo-50 transition-all"
+              className="w-full mb-8 px-5 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-lg bg-indigo-50 transition-all"
               maxLength={10}
+              placeholder="必須"
             />
+            {nameError && <p className="text-red-500 text-sm mt-1">{nameError}</p>}
           </div>
           
-          <div className="flex justify-center mt-2 mb-8">
+          {/* <div className="flex justify-center mt-2 mb-8">
             {playerRating}
-          </div>
+          </div> */}
           
           <button
             onClick={handleJoin}
-            className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl text-lg tracking-wide"
+            disabled={!playerName}
+            className={`w-full font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl text-lg tracking-wide ${
+              playerName
+                ? 'bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
           >
             ルーム作成 / 参加
           </button>
