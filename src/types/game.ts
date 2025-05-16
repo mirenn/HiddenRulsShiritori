@@ -8,7 +8,10 @@ export interface GameState {
 }
 
 export interface HiddenRule {
+  id: string;
   description: string;
+  points: number;
+  achievedByPlayer: string | null; // null if not achieved, or player name
 }
 
 export interface WSMessage {
