@@ -300,29 +300,34 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md mx-auto transition-all duration-300">
-        <h1 className="text-3xl font-bold mb-6 text-center text-indigo-700">隠しルールしりとり</h1>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 px-2">
+      <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg mx-auto transition-all duration-300 flex flex-col items-center">
+        <h1 className="text-4xl sm:text-5xl font-extrabold mb-8 text-center text-indigo-700 tracking-tight drop-shadow-lg flex flex-col items-center">
+          <span className="inline-block px-6 py-2 bg-gradient-to-r from-indigo-400 via-blue-400 to-indigo-400 text-white rounded-xl shadow-md mb-2">
+            隠しルールしりとり
+          </span>
+          <span className="text-base text-indigo-400 font-medium mt-2 tracking-wide">みんなで推理しながら遊ぼう！</span>
+        </h1>
         
-        <div className="space-y-4">
+        <div className="space-y-6 w-full">
           <div>
-            <label className="block mb-2 text-gray-700 font-medium">ルーム番号（4桁）</label>
+            <label className="block mb-2 text-gray-700 font-semibold text-lg">ルーム番号（4桁）</label>
             <input
               type="text"
               value={roomCode}
               onChange={handleInput}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center text-xl"
+              className="w-full px-5 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center text-2xl bg-indigo-50 transition-all"
               maxLength={4}
             />
           </div>
           
           <div>
-            <label className="block mb-2 text-gray-700 font-medium">プレイヤー名（10文字以内）</label>
+            <label className="block mb-2 text-gray-700 font-semibold text-lg">プレイヤー名（10文字以内）</label>
             <input
               type="text"
               value={playerName}
               onChange={handleNameInput}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center"
+              className="w-full px-5 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center text-lg bg-indigo-50 transition-all"
               maxLength={10}
             />
           </div>
@@ -333,7 +338,7 @@ function App() {
           
           <button
             onClick={handleJoin}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
+            className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl text-lg tracking-wide"
           >
             ルーム作成 / 参加
           </button>
