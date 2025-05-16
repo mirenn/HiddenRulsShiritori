@@ -28,7 +28,7 @@ const callGeminiAPIServer = async (prompt: string): Promise<boolean> => {
     console.error('Gemini API key is not set on server.');
     return false;
   }
-  const geminiApiEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+  const geminiApiEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent';
   try {
     const response = await fetch(`${geminiApiEndpoint}?key=${apiKey}`, {
       method: 'POST',
