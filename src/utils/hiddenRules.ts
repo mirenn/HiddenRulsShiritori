@@ -33,23 +33,51 @@ export const checkHiddenRule = async (word: string, rule: HiddenRule): Promise<b
   // Gemini API を利用するルールは、API呼び出しを行う必要があります。
   // 簡単なルールは文字列操作で判定できます。
 
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  // TODO: 実際のGemini APIのエンドポイントに置き換えてください
+  const geminiApiEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+
+  const callGeminiAPI = async (prompt: string): Promise<boolean> => {
+    if (!apiKey) {
+      console.error('Gemini API key is not set.');
+      return false;
+    }
+    try {
+      const response = await fetch(`${geminiApiEndpoint}?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+        }),
+      });
+      if (!response.ok) {
+        console.error('Gemini API request failed:', response.status, await response.text());
+        return false;
+      }
+      const data = await response.json();
+      // TODO: Gemini APIのレスポンス形式に合わせて、判定ロジックを調整してください。
+      // ここでは、レスポンスのテキストが "はい" (またはそれに類する肯定的な回答) かどうかで判定する例を示します。
+      const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase();
+      return resultText === 'はい' || resultText === 'yes';
+    } catch (error) {
+      console.error('Error calling Gemini API:', error);
+      return false;
+    }
+  };
+
   switch (rule.id) {
     case 'rule1': // 3文字の単語
       return word.length === 3;
     case 'rule2': // 「ん」で終わる単語
       return word.endsWith('ん');
     case 'rule3': // 食べ物の名前 - Gemini API候補
-      // TODO: Gemini APIで判定 (例: 「[単語]は食べ物ですか？」)
-      console.warn(`Rule '${rule.description}' needs Gemini API integration.`);
-      return false; // 仮実装
+      return await callGeminiAPI(`「${word}」は食べ物の名前ですか？ はい、いいえで答えてください。`);
     case 'rule4': // 動物の名前 - Gemini API候補
-      // TODO: Gemini APIで判定
-      console.warn(`Rule '${rule.description}' needs Gemini API integration.`);
-      return false; // 仮実装
+      return await callGeminiAPI(`「${word}」は動物の名前ですか？ はい、いいえで答えてください。`);
     case 'rule5': // 色を表す単語 - Gemini API候補
-      // TODO: Gemini APIで判定
-      console.warn(`Rule '${rule.description}' needs Gemini API integration.`);
-      return false; // 仮実装
+      return await callGeminiAPI(`「${word}」は色を表す単語ですか？ はい、いいえで答えてください。`);
     case 'rule6': // ひらがな5文字以上の単語
       return word.length >= 5 && /^[ぁ-んー]+$/.test(word);
     case 'rule7': // カタカナの単語
@@ -59,9 +87,9 @@ export const checkHiddenRule = async (word: string, rule: HiddenRule): Promise<b
     case 'rule9': // 「パ」から始まる単語
       return word.startsWith('パ');
     case 'rule10': // ことわざ (最初の3文字で判定) - Gemini API候補
-      // TODO: Gemini APIで判定 (例: 「[単語]から始まることわざはありますか？」)
-      console.warn(`Rule '${rule.description}' needs Gemini API integration.`);
-      return false; // 仮実装
+      // ことわざの判定はより複雑なプロンプトやロジックが必要になる可能性があります。
+      // ここでは簡略化のため、単語がことわざかどうかを直接尋ねる形にしています。
+      return await callGeminiAPI(`「${word}」ということわざは存在しますか？ はい、いいえで答えてください。`);
     default:
       return false;
   }
