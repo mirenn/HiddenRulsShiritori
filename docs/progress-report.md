@@ -5,18 +5,19 @@
 ### Current Progress
 - Initialized with Vite, React, TypeScript, and TailwindCSS.
 - Room matching UI implemented (4-digit code, player name, join/create button).
-- Placeholder game screen displays after joining (shows room code, player name).
-- 2-player room state management using localStorage and polling.
-- Shiritori core logic implemented (game rules, turn management, input, history) with localStorage sync for 2-player alternation.
-- Rating system UI component created (`src/components/RatingDisplay.tsx`).
-- WebSocket connection hook created (`src/hooks/useWebSocket.ts`).
-- Basic server-side structure initiated (`server/index.ts`).
+- WebSocket connection hook created (`src/hooks/useWebSocket.ts`) and basic server-side WebSocket logic implemented (`server/index.ts`) for real-time communication.
+- Game screen displays after joining, showing room code, player name, and connection status.
+- Shiritori core logic implemented (game rules, turn management, input, history) with WebSocket-based real-time synchronization for 2-player gameplay.
+- Hidden rules defined (`src/utils/hiddenRules.ts`) and basic point system implemented on the server-side (`server/index.ts`). Some rules requiring Gemini API are placeholders.
+- Rating system UI component created (`src/components/RatingDisplay.tsx`) and localStorage-based rating storage and update logic implemented (`src/utils/ratingStorage.ts`, `src/hooks/useWebSocket.ts`).
+- Basic server-side structure for handling game logic, player connections, and room management is in place (`server/index.ts`).
+- Environment variable setup for API keys (`.env`).
 
 ### Next Steps
-- Implement hidden rules and point system.
-- Finalize rating system (localStorage).
-- Integrate Google Gemini API.
-- Implement WebSocket-based real-time synchronization (server and client).
+- Implement Google Gemini API integration for dynamic hidden rule evaluation (client-side `src/utils/hiddenRules.ts` and server-side `server/index.ts`).
+- Refine and thoroughly test the WebSocket-based real-time synchronization, including edge cases and error handling.
+- Enhance UI/UX based on gameplay testing.
+- Conduct comprehensive testing of all game features.
 
 ---
-The project currently features front-end implementation for 2-player Shiritori, including game logic and turn management. Server-side WebSocket implementation is a priority for real-time online play. This document summarizes the current implementation status. See `game-requirements.md` for full requirements.
+The project has achieved significant progress in implementing core gameplay mechanics, real-time multiplayer functionality via WebSockets, and the rating system. The immediate focus is on integrating the Gemini API for advanced hidden rule capabilities and ensuring robust real-time synchronization. See `game-requirements.md` for full requirements.
