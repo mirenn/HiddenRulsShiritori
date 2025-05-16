@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { GameState, WSMessage } from '../types/game';
+import type { GameState, WSMessage } from '../types/game';
 
 // WebSocketのURL
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3000';
