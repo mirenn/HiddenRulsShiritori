@@ -73,7 +73,8 @@ interface GameState {
   players: string[];
   history: string[];
   turn: number;
-  hiddenRules: HiddenRule[];
+  hiddenRules: HiddenRule[]; // 実際の隠しルール (3つ)
+  candidateHiddenRules: Omit<HiddenRule, 'checkFunction' | 'needsApi' | 'achievedByPlayer'>[]; // 候補となる隠しルール (9つ)
   scores: { [player: string]: number };
   winner: string | null;
   wordsSaidCount: { [player: string]: number }; // 各プレイヤーが言った単語数
@@ -120,7 +121,8 @@ wss.on('connection', (ws: WebSocket) => {
 
         // ルームが存在しない場合は作成
         if (roomCode && !rooms.has(roomCode)) {
-          const initialHiddenRules = generateHiddenRules(); // ここで生成
+          const actualHiddenRules = generateHiddenRules(); // 実際の隠しルール3つ
+          const candidateRules = generateCandidateHiddenRules(actualHiddenRules, allServerRules); // 候補のルール9つ
           rooms.set(roomCode, {
             clients: new Map(),
             gameState: {
@@ -128,7 +130,8 @@ wss.on('connection', (ws: WebSocket) => {
               history: [],
               historyDetails: [],
               turn: 0,
-              hiddenRules: initialHiddenRules, // サーバー側で保持
+              hiddenRules: actualHiddenRules, // サーバー側で保持
+              candidateHiddenRules: candidateRules, // 候補も保持
               scores: {},
               winner: null,
               wordsSaidCount: {}, // 初期化
@@ -174,7 +177,9 @@ wss.on('connection', (ws: WebSocket) => {
           gameState: {
             ...room.gameState,
             // 隠しルールの詳細(checkFunctionやneedsApi)はクライアントに送信しない
-            hiddenRules: room.gameState.hiddenRules.map(({ id, description, points, achievedByPlayer }) => ({ id, description, points, achievedByPlayer }))
+            hiddenRules: room.gameState.hiddenRules.map(({ id, description, points, achievedByPlayer }) => ({ id, description, points, achievedByPlayer })),
+            // candidateHiddenRules も同様に、必要な情報のみ送信
+            candidateHiddenRules: room.gameState.candidateHiddenRules.map(({ id, description, points }) => ({ id, description, points }))
           }
         }));
 
@@ -441,6 +446,19 @@ function generateHiddenRules(): HiddenRule[] {
   return shuffled.slice(0, 3).map(rule => ({ ...rule, achievedByPlayer: null } as HiddenRule));
 }
 
+// 候補となる隠しルールを9つ生成する関数
+function generateCandidateHiddenRules(actualRules: HiddenRule[], allRules: Omit<HiddenRule, 'achievedByPlayer'>[]): Omit<HiddenRule, 'checkFunction' | 'needsApi' | 'achievedByPlayer'>[] {
+  const actualRuleDescriptions = actualRules.map(r => r.description);
+  const dummyRules = allRules
+    .filter(rule => !actualRuleDescriptions.includes(rule.description)) // 実際とは異なるルールを選ぶ
+    .sort(() => 0.5 - Math.random())
+    .slice(0, 6) // ダミーを6つ選ぶ
+    .map(({ id, description, points }) => ({ id, description, points }));
+
+  const candidates = [...actualRules.map(({ id, description, points }) => ({ id, description, points })), ...dummyRules];
+  return candidates.sort(() => 0.5 - Math.random()); // 実際のルールとダミーをシャッフル
+}
+
 // ダミーのルール説明を生成する関数 (ヒント用)
 function generateDummyRuleDescriptions(allRules: Omit<HiddenRule, 'achievedByPlayer'>[], excludeRule: HiddenRule, count: number): string[] {
   const candidates = allRules.filter(rule => rule.id !== excludeRule.id);
@@ -458,7 +476,8 @@ function broadcastGameState(roomCode: string) {
     type: 'gameState',
     gameState: {
       ...room.gameState,
-      hiddenRules: room.gameState.hiddenRules.map(({ id, description, points, achievedByPlayer }) => ({ id, description, points, achievedByPlayer }))
+      hiddenRules: room.gameState.hiddenRules.map(({ id, description, points, achievedByPlayer }) => ({ id, description, points, achievedByPlayer })),
+      candidateHiddenRules: room.gameState.candidateHiddenRules.map(({ id, description, points }) => ({ id, description, points }))
     }
   });
 

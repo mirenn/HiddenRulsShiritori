@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useWebSocket } from './hooks/useWebSocket'
 import RatingDisplay from './components/RatingDisplay'
-// Add this import
-import { allHiddenRules } from './utils/hiddenRules';
 
 function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName: string }) {
   const [input, setInput] = useState('')
@@ -319,7 +317,7 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
             以下の9つのルールのうち、3つが実際の隠しルールです。特定の条件を満たす単語を言うとポイントを獲得できます。
           </p>
           <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {allHiddenRules.map((rule: { id: string; description: string }) => (
+            {gameState.candidateHiddenRules && gameState.candidateHiddenRules.map((rule: { id: string; description: string }) => (
               <li key={rule.id} className="bg-white p-2 rounded shadow-sm text-sm text-gray-700">
                 {rule.description}
               </li>
@@ -394,7 +392,7 @@ function App() {
         </h1>
         
         <div className="space-y-6 w-full">
-          <div></div>
+          <div>
             <div className="flex justify-between items-center mb-1">
               <label className="block text-gray-700 font-semibold text-lg">ルーム番号（4桁）</label>
               <div className="relative group">
