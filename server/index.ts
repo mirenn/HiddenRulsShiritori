@@ -324,12 +324,12 @@ wss.on('connection', (ws: WebSocket) => {
           return;
         }
 
-        // 終了判定 (各プレイヤーが10単語言い終わったか)
-        const allPlayersSaid10Words = gameState.players.every(
-          player => (gameState.wordsSaidCount[player] || 0) >= 10
+        // 終了判定 (各プレイヤーが7単語言い終わったか)
+        const allPlayersSaid7Words = gameState.players.every(
+          player => (gameState.wordsSaidCount[player] || 0) >= 7
         );
 
-        if (allPlayersSaid10Words) {
+        if (allPlayersSaid7Words) {
           // ポイントが多いプレイヤーを勝者とする
           let maxScore = -1;
           let winners: string[] = [];
@@ -347,7 +347,7 @@ wss.on('connection', (ws: WebSocket) => {
             client.send(JSON.stringify({
               type: 'gameOver',
               winner: gameState.winner,
-              reason: 'allPlayersSaid10Words'
+              reason: 'allPlayersSaid7Words' // 理由を更新
             }));
           });
           broadcastGameState(roomCode); // 状態更新を通知して終了

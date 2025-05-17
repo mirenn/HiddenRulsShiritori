@@ -97,8 +97,8 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
   // ゲーム終了表示
   if (showGameSummary) {
     let gameEndReasonMessage = '';
-    if (gameState?.gameOverReason === 'allPlayersSaid10Words') {
-      gameEndReasonMessage = '各プレイヤーが10単語言い終わったため、ゲーム終了です。';
+    if (gameState?.gameOverReason === 'allPlayersSaid7Words') { // 変更
+      gameEndReasonMessage = '各プレイヤーが7単語言い終わったため、ゲーム終了です。'; // 変更
     }
 
     return (
@@ -256,7 +256,7 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
                 <span className="font-bold text-lg bg-white px-3 py-1 rounded-full shadow-sm text-indigo-700">{gameState.scores[player]} pt</span>
               </div>
               <div className="mt-1 text-sm text-gray-600">
-                言った単語数: {gameState.wordsSaidCount?.[player] || 0} / 10
+                言った単語数: {gameState.wordsSaidCount?.[player] || 0} / 7 {/* 変更 */}
               </div>
               <div className="mt-2">
                 <RatingDisplay playerName={player} />
