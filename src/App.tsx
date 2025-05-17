@@ -4,7 +4,6 @@ import RatingDisplay from './components/RatingDisplay'
 
 function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName: string }) {
   const [input, setInput] = useState('')
-  const [ratingChange, setRatingChange] = useState<number>(0)
   const [showGameSummary, setShowGameSummary] = useState(false)
   
   // WebSocket接続とゲーム状態管理
@@ -33,8 +32,6 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
   // ゲーム終了時の処理
   useEffect(() => {
     if (gameState?.winner) {
-      // 勝者かどうかでレート変動を設定
-      setRatingChange(gameState.winner === playerName ? 20 : -20)
       setShowGameSummary(true)
     }
   }, [gameState?.winner, playerName])

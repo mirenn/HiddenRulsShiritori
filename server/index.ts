@@ -440,7 +440,7 @@ app.post('/api/check-hidden-rule', async (req: Request, res: Response) => {
 });
 
 // すべてのリクエストをindex.htmlにリダイレクト（SPAのため）
-app.get('*', (_req, res) => {
+app.get('/*splat', (_req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
