@@ -148,6 +148,40 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
             </div>
           </div>
           
+          <div className="mb-6 bg-gray-50 p-4 rounded-lg">
+            <h3 className="font-bold mb-3 text-center text-indigo-600">しりとり履歴</h3>
+            <div className="border rounded-lg p-4 bg-white min-h-[200px] max-h-[300px] overflow-y-auto shadow-inner">
+              {gameState.history.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">まだ単語がありません</p>
+              ) : (
+                <ul className="space-y-2">
+                  {gameState.history.map((word, i) => {
+                    const playerIndex = i % gameState.players.length;
+                    const player = gameState.players[playerIndex];
+                    // 詳細情報があれば取得
+                    const detail = gameState.historyDetails?.[i];
+                    return (
+                      <li key={i} className={`px-3 py-2 rounded-lg bg-gray-50 shadow-sm`}>
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold mr-2 text-indigo-700">{player}:</span>
+                          <span className="text-gray-800">{word}</span>
+                          {detail && detail.points > 0 && (
+                            <span className="ml-2 text-yellow-700 font-semibold">+{detail.points}pt</span>
+                          )}
+                        </div>
+                        {detail && detail.rulesAchieved && detail.rulesAchieved.length > 0 && (
+                          <div className="text-xs text-gray-600 mt-1 pl-6">
+                            達成ルール: {detail.rulesAchieved.map((r: any) => r.description).join(', ')}
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+          
           <button 
             onClick={() => window.location.reload()}
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
@@ -188,14 +222,9 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
         {/* ポイント獲得通知 */}
         {lastPointsGained && (
           <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 px-4 py-3 rounded mb-4 animate-pulse shadow-sm">
-            <div className="flex items-center mb-1">
+            <div className="flex items-center">
               <strong>{lastPointsGained.player}</strong>が条件を満たして<strong> {lastPointsGained.points}ポイント </strong>獲得しました！
             </div>
-            {lastPointsGained.rulesAchieved && lastPointsGained.rulesAchieved.length > 0 && (
-              <div className="text-sm">
-                達成したルール: {lastPointsGained.rulesAchieved.map(r => r.description).join(', ')}
-              </div>
-            )}
           </div>
         )}
 
@@ -293,7 +322,7 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
           <h3 className="font-bold mb-2 text-indigo-700">隠しルールについて</h3>
           <p className="text-gray-700 italic">
             このゲームには3つの隠しルールがあります。条件を満たす単語を言うとポイントが獲得できます。
-            2ターン連続で誰もポイントを獲得できない場合、隠しルールのうち1つに関するヒントが表示されます。
+            4ターン連続で誰もポイントを獲得できない場合、隠しルールのうち1つに関するヒントが表示されます。
           </p>
         </div>
       </div>

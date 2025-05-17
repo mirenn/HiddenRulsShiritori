@@ -78,6 +78,12 @@ interface GameState {
   winner: string | null;
   wordsSaidCount: { [player: string]: number }; // 各プレイヤーが言った単語数
   noPointTurns: number; // ポイント獲得なしの連続ターン数
+  historyDetails?: {
+    player: string;
+    word: string;
+    points: number;
+    rulesAchieved: { id: string; description: string }[];
+  }[];
 }
 
 interface HiddenRule {
@@ -120,6 +126,7 @@ wss.on('connection', (ws: WebSocket) => {
             gameState: {
               players: [],
               history: [],
+              historyDetails: [],
               turn: 0,
               hiddenRules: initialHiddenRules, // サーバー側で保持
               scores: {},
@@ -233,8 +240,7 @@ wss.on('connection', (ws: WebSocket) => {
 
         // 隠しルールのチェックとポイント加算
         let pointsGainedThisTurn = 0;
-        const achievedRulesInfo: { ruleId: string; description: string; points: number; }[] = []; // どのルールでポイント獲得したかの情報
-
+        const achievedRulesInfo: { ruleId: string; description: string; points: number; }[] = [];
         for (const rule of gameState.hiddenRules) {
           if (rule.achievedByPlayer === null || rule.achievedByPlayer === playerName) { // まだ誰も達成していないか、自分が達成済みのルールのみポイント加算のチャンス
             let ruleMet = false;
@@ -319,6 +325,15 @@ wss.on('connection', (ws: WebSocket) => {
           broadcastGameState(roomCode); // 状態更新を通知して終了
           return;
         }
+
+        // ポイント加算や勝利判定などの直後に履歴詳細を追加
+        if (!gameState.historyDetails) gameState.historyDetails = [];
+        gameState.historyDetails.push({
+          player: playerName,
+          word,
+          points: pointsGainedThisTurn,
+          rulesAchieved: achievedRulesInfo.map(r => ({ id: r.ruleId, description: r.description }))
+        });
 
         // ヒント機能
         if (gameState.noPointTurns >= 2) {
