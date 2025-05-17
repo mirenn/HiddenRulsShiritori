@@ -443,6 +443,7 @@ const allServerRules: Omit<HiddenRule, 'achievedByPlayer'>[] = [
   { id: 'rule22', description: '甘いものを表す言葉', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は甘いものを表す言葉ですか？ はい、いいえで答えてください。`) },
   { id: 'rule23', description: '夏を連想させる言葉', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は夏を連想させる言葉ですか？ はい、いいえで答えてください。`) },
   { id: 'rule24', description: '前の単語と関連性の高い言葉', points: 2, needsApi: true, checkFunction: async (word, previousWord) => await callGeminiAPIServer(`「${word}」は「${previousWord}」と関連性の高い言葉ですか？ はい、いいえで答えてください。`) },
+  { id: 'rule25', description: '前の単語より文字数が多い言葉', points: 2, checkFunction: (word, previousWord) => !!previousWord && word.length > previousWord.length },
 ];
 
 // 隠しルールを生成する関数 (サーバーサイドで定義)

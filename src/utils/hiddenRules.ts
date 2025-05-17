@@ -21,6 +21,7 @@ export const allHiddenRules: Omit<HiddenRule, 'achievedByPlayer' | 'checkFunctio
   { id: 'rule22', description: '甘いものを表す言葉', points: 1 },
   { id: 'rule23', description: '夏を連想させる言葉', points: 1 },
   { id: 'rule24', description: '前の単語と関連性の高い言葉', points: 2 },
+  { id: 'rule25', description: '前の単語より文字数が多い言葉', points: 2 },
 ];
 
 /**
