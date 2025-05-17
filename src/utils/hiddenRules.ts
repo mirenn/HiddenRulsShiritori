@@ -8,16 +8,18 @@ export const allHiddenRules: Omit<HiddenRule, 'achievedByPlayer' | 'checkFunctio
   { id: 'rule5', description: '色を表す単語', points: 1 },
   { id: 'rule6', description: 'ひらがな5文字以上の単語', points: 2 },
   { id: 'rule8', description: '最後に「り」がつく言葉', points: 1 },
-  { id: 'rule9', description: '「ぱ」から始まる単語', points: 2 },
+  { id: 'rule9', description: '濁音もしくは半濁音を含む単語', points: 2 },
   { id: 'rule11', description: '植物の名前', points: 1 },
   { id: 'rule12', description: '乗り物の名前', points: 1 },
   { id: 'rule13', description: '同じ文字が2つ続く単語 (例: ばなな)', points: 2 },
   { id: 'rule14', description: '最初の文字と最後の文字が同じ単語', points: 2 },
   { id: 'rule15', description: '天候に関する言葉', points: 1 },
   { id: 'rule16', description: 'スポーツの名前', points: 1 },
-  { id: 'rule17', description: '「き」で終わる3文字の単語', points: 2 },
-  { id: 'rule18', description: '国名', points: 2 },
   { id: 'rule19', description: '楽器の名前', points: 1 },
+  { id: 'rule20', description: '丸い形を連想させる言葉', points: 1 },
+  { id: 'rule21', description: '柔らかいものを表す言葉', points: 1 },
+  { id: 'rule22', description: '甘いものを表す言葉', points: 1 },
+  { id: 'rule23', description: '夏を連想させる言葉', points: 1 },
 ];
 
 /**
@@ -66,6 +68,15 @@ export const checkHiddenRule = async (word: string, rule: HiddenRule): Promise<b
     case 'rule3': // 食べ物の名前 - Gemini API候補
     case 'rule4': // 動物の名前 - Gemini API候補
     case 'rule5': // 色を表す単語 - Gemini API候補
+    case 'rule11': // 植物の名前 - Gemini API候補
+    case 'rule12': // 乗り物の名前 - Gemini API候補
+    case 'rule15': // 天候に関する言葉 - Gemini API候補
+    case 'rule16': // スポーツの名前 - Gemini API候補
+    case 'rule19': // 楽器の名前 - Gemini API候補
+    case 'rule20': // 丸い形を連想させる言葉 - Gemini API候補
+    case 'rule21': // 柔らかいものを表す言葉 - Gemini API候補
+    case 'rule22': // 甘いものを表す言葉 - Gemini API候補
+    case 'rule23': // 夏を連想させる言葉 - Gemini API候補
       // Gemini APIが必要なルールはサーバーAPI経由
       return await callGeminiServerAPI(word, rule.id);
     default:
