@@ -189,11 +189,14 @@ wss.on('connection', (ws: WebSocket) => {
 
       // 単語送信時の処理 (ルールチェックをサーバーサイドで行うように変更)
       if (data.type === 'word' && roomCode && playerName) {
+        const { word } = data;
         const room = rooms.get(roomCode);
         if (!room) return;
 
         const gameState = room.gameState;
-        const word = data.word;
+
+        // 最後の単語を取得
+        const previousWord = gameState.history.length > 0 ? gameState.history[gameState.history.length - 1] : undefined;
 
         // プレイヤーのインデックスを取得
         const playerIndex = gameState.players.indexOf(playerName);
@@ -252,7 +255,11 @@ wss.on('connection', (ws: WebSocket) => {
             if (rule.needsApi && rule.checkFunction) {
               ruleMet = await rule.checkFunction(word, process.env.GEMINI_API_KEY);
             } else if (rule.checkFunction) {
-              ruleMet = rule.checkFunction(word) as boolean;
+              if (rule.id === 'rule24' && previousWord) { // 新しいルールのための特別処理
+                ruleMet = await (rule.checkFunction as (word: string, previousWord?: string) => Promise<boolean> | boolean)(word, previousWord);
+              } else if (rule.id !== 'rule24') {
+                ruleMet = rule.checkFunction(word) as boolean;
+              }
             }
 
             if (ruleMet) {
@@ -435,6 +442,7 @@ const allServerRules: Omit<HiddenRule, 'achievedByPlayer'>[] = [
   { id: 'rule21', description: '柔らかいものを表す言葉', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は柔らかいものを表す言葉ですか？ はい、いいえで答えてください。`) },
   { id: 'rule22', description: '甘いものを表す言葉', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は甘いものを表す言葉ですか？ はい、いいえで答えてください。`) },
   { id: 'rule23', description: '夏を連想させる言葉', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は夏を連想させる言葉ですか？ はい、いいえで答えてください。`) },
+  { id: 'rule24', description: '前の単語と関連性の高い言葉', points: 2, needsApi: true, checkFunction: async (word, previousWord) => await callGeminiAPIServer(`「${word}」は「${previousWord}」と関連性の高い言葉ですか？ はい、いいえで答えてください。`) },
 ];
 
 // 隠しルールを生成する関数 (サーバーサイドで定義)

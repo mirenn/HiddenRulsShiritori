@@ -20,6 +20,7 @@ export const allHiddenRules: Omit<HiddenRule, 'achievedByPlayer' | 'checkFunctio
   { id: 'rule21', description: '柔らかいものを表す言葉', points: 1 },
   { id: 'rule22', description: '甘いものを表す言葉', points: 1 },
   { id: 'rule23', description: '夏を連想させる言葉', points: 1 },
+  { id: 'rule24', description: '前の単語と関連性の高い言葉', points: 2 },
 ];
 
 /**
