@@ -1,4 +1,5 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
+import type { Request, Response } from 'express';
 import http from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import cors from 'cors';
@@ -8,14 +9,15 @@ import { fileURLToPath } from 'url';
 
 // gameLogic.tsから必要なものをインポート
 import {
-  GameState,
-  HiddenRule,
   allServerRules, // allServerRulesをインポート
   generateHiddenRules,
   generateCandidateHiddenRules,
   getRandomHiragana,
   processPlayerWord,
   callGeminiAPIServer // callGeminiAPIServerをインポート
+} from './gameLogic';
+import type {
+  GameState,
 } from './gameLogic';
 
 // 環境変数の読み込み
@@ -165,7 +167,7 @@ wss.on('connection', (ws: WebSocket) => {
 
         if (gameResult.pointsGainedThisTurn !== undefined && gameResult.pointsGainedThisTurn > 0) {
           // ポイント獲得通知
-          room.clients.forEach((clientName, client) => {
+          room.clients.forEach((_, client) => {
             client.send(JSON.stringify({
               type: 'pointGained',
               player: playerName,
@@ -178,7 +180,7 @@ wss.on('connection', (ws: WebSocket) => {
         }
 
         if (gameResult.hint) {
-          room.clients.forEach((clientName, client) => {
+          room.clients.forEach((_, client) => {
             client.send(JSON.stringify({
               type: 'hint',
               hintTargetRuleId: gameResult.hint!.hintTargetRuleId,
@@ -189,7 +191,7 @@ wss.on('connection', (ws: WebSocket) => {
         }
 
         if (gameResult.gameOver) {
-          room.clients.forEach((clientName, client) => {
+          room.clients.forEach((_, client) => {
             client.send(JSON.stringify({
               type: 'gameOver',
               winner: gameResult.winner,
@@ -243,7 +245,7 @@ wss.on('connection', (ws: WebSocket) => {
         rooms.delete(roomCode);
       } else {
         // 切断通知
-        room.clients.forEach((clientName, client) => {
+        room.clients.forEach((_, client) => {
           client.send(JSON.stringify({
             type: 'playerDisconnected',
             player: playerName
@@ -275,7 +277,7 @@ function broadcastGameState(roomCode: string) {
 }
 
 // API: Geminiの隠しルール生成APIを実装
-app.post('/api/generate-hidden-rules', async (req: Request, res: Response) => {
+app.post('/api/generate-hidden-rules', async (_req: Request, res: Response) => {
   try {
     if (!process.env.GEMINI_API_KEY) {
       res.status(500).json({ error: 'GEMINI_API_KEYが設定されていません' });
