@@ -155,13 +155,19 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
                 <p className="text-gray-500 text-center py-8">まだ単語がありません</p>
               ) : (
                 <ul className="space-y-2">
-                  {gameState.history.map((word, i) => {
-                    const playerIndex = i % gameState.players.length;
+                  {gameState.history.slice().reverse().map((word, i) => {
+                    // Note: index `i` here is from the reversed array.
+                    // If you need the original index, you might need to adjust logic or pass it differently.
+                    // For player assignment, we need to be careful.
+                    // Original logic: const playerIndex = i % gameState.players.length;
+                    // With reverse, if history length is H, original index is H - 1 - i.
+                    const originalIndex = gameState.history.length - 1 - i;
+                    const playerIndex = originalIndex % gameState.players.length;
                     const player = gameState.players[playerIndex];
                     // 詳細情報があれば取得
-                    const detail = gameState.historyDetails?.[i];
+                    const detail = gameState.historyDetails?.[originalIndex];
                     return (
-                      <li key={i} className={`px-3 py-2 rounded-lg bg-gray-50 shadow-sm`}>
+                      <li key={originalIndex} className={`px-3 py-2 rounded-lg bg-gray-50 shadow-sm`}>
                         <div className="flex items-center justify-between">
                           <span className="font-bold mr-2 text-indigo-700">{player}:</span>
                           <span className="text-gray-800">{word}</span>
@@ -294,11 +300,15 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
               <p className="text-gray-500 text-center py-8">まだ単語がありません</p>
             ) : (
               <ul className="space-y-2">
-                {gameState.history.map((word, i) => {
-                  const playerIndex = i % gameState.players.length;
+                {gameState.history.slice().reverse().map((word, i) => {
+                  // Note: index `i` here is from the reversed array.
+                  // Original logic: const playerIndex = i % gameState.players.length;
+                  // With reverse, if history length is H, original index is H - 1 - i.
+                  const originalIndex = gameState.history.length - 1 - i;
+                  const playerIndex = originalIndex % gameState.players.length;
                   const isCurrentPlayer = gameState.players[playerIndex] === playerName;
                   return (
-                    <li key={i} className={`px-3 py-2 rounded-lg ${isCurrentPlayer ? 'bg-blue-50 text-blue-800' : 'bg-white text-gray-800'} shadow-sm`}>
+                    <li key={originalIndex} className={`px-3 py-2 rounded-lg ${isCurrentPlayer ? 'bg-blue-50 text-blue-800' : 'bg-white text-gray-800'} shadow-sm`}>
                       <span className={`font-bold mr-2 ${isCurrentPlayer ? 'text-blue-700' : 'text-gray-700'}`}>{gameState.players[playerIndex]}:</span>
                       <span>{word}</span>
                     </li>
