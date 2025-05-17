@@ -418,10 +418,9 @@ const allServerRules: Omit<HiddenRule, 'achievedByPlayer'>[] = [
   { id: 'rule4', description: '動物の名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は動物の名前ですか？ はい、いいえで答えてください。`) },
   { id: 'rule5', description: '色を表す単語', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は色を表す単語ですか？ はい、いいえで答えてください。`) },
   { id: 'rule6', description: 'ひらがな5文字以上の単語', points: 2, checkFunction: (word) => word.length >= 5 && /^[ぁ-んー]+$/.test(word) },
-  { id: 'rule7', description: 'カタカナの単語', points: 1, checkFunction: (word) => /^[ァ-ヶー]+$/.test(word) },
+  { id: 'rule7', description: 'ひらがなの単語', points: 1, checkFunction: (word) => /^[ぁ-んー]+$/.test(word) },
   { id: 'rule8', description: '最後に「り」がつく言葉', points: 1, checkFunction: (word) => word.endsWith('り') },
-  { id: 'rule9', description: '「パ」から始まる単語', points: 2, checkFunction: (word) => word.startsWith('パ') },
-  { id: 'rule10', description: 'ことわざ (一部合致)', points: 3, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」で始まる、または一部に含むことわざはありますか？ はい、いいえで答えてください。`) },
+  { id: 'rule9', description: '「ぱ」から始まる単語', points: 2, checkFunction: (word) => word.startsWith('パ') },
   { id: 'rule11', description: '植物の名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は植物の名前ですか？ はい、いいえで答えてください。`) },
   { id: 'rule12', description: '乗り物の名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は乗り物の名前ですか？ はい、いいえで答えてください。`) },
   { id: 'rule13', description: '同じ文字が2つ続く単語 (例: りんご、バナナ)', points: 2, checkFunction: (word) => /(\p{L})\1/u.test(word) },
@@ -511,9 +510,6 @@ app.post('/api/check-hidden-rule', async (req: Request, res: Response) => {
       break;
     case 'rule5':
       prompt = `「${word}」は色を表す単語ですか？ はい、いいえで答えてください。`;
-      break;
-    case 'rule10':
-      prompt = `「${word}」ということわざは存在しますか？ はい、いいえで答えてください。`;
       break;
     default:
       res.status(400).json({ result: false, error: 'このルールIDはAPI判定に未対応です' });

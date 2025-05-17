@@ -8,10 +8,9 @@ const allHiddenRules: Omit<HiddenRule, 'achievedByPlayer'>[] = [
   { id: 'rule4', description: '動物の名前', points: 1 },
   { id: 'rule5', description: '色を表す単語', points: 1 },
   { id: 'rule6', description: 'ひらがな5文字以上の単語', points: 2 },
-  { id: 'rule7', description: '長音（伸ばし棒「ー」）を含む単語', points: 1 },
+  { id: 'rule7', description: 'ひらがなの単語', points: 1 },
   { id: 'rule8', description: '最後に「り」がつく言葉 (しりとりなので)', points: 1 },
   { id: 'rule9', description: '「ぱ」から始まる単語', points: 2 },
-  { id: 'rule10', description: 'ことわざ (最初の3文字で判定)', points: 3 }, // Gemini API連携候補
 ];
 
 /**
@@ -53,8 +52,8 @@ export const checkHiddenRule = async (word: string, rule: HiddenRule): Promise<b
       return word.endsWith('ん');
     case 'rule6': // ひらがな5文字以上の単語
       return word.length >= 5 && /^[ぁ-んー]+$/.test(word);
-    case 'rule7': // 長音（伸ばし棒「ー」）を含む単語
-      return word.includes('ー');
+    case 'rule7': // ひらがなの単語
+      return /^[ぁ-んー]+$/.test(word);
     case 'rule8': // 最後に「り」がつく言葉
       return word.endsWith('り');
     case 'rule9': // 「パ」から始まる単語
@@ -62,7 +61,6 @@ export const checkHiddenRule = async (word: string, rule: HiddenRule): Promise<b
     case 'rule3': // 食べ物の名前 - Gemini API候補
     case 'rule4': // 動物の名前 - Gemini API候補
     case 'rule5': // 色を表す単語 - Gemini API候補
-    case 'rule10': // ことわざ (最初の3文字で判定) - Gemini API候補
       // Gemini APIが必要なルールはサーバーAPI経由
       return await callGeminiServerAPI(word, rule.id);
     default:
