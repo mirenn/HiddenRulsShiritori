@@ -15,7 +15,7 @@ import {
   getRandomHiragana,
   processPlayerWord,
   callGeminiAPIServer // callGeminiAPIServerをインポート
-} from './gameLogic';
+} from './gameLogic.js';
 import type {
   GameState,
 } from './gameLogic';

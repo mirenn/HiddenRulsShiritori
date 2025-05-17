@@ -11,7 +11,7 @@
     /*"allowImportingTsExtensions": true,*/
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
-    "outDir": "./dist/server",
+    "outDir": "./dist_server",
 
     /* Linting */
     "strict": true,
