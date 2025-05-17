@@ -16,6 +16,7 @@ export interface GameState {
     points: number;
     rulesAchieved: { id: string; description: string }[];
   }[];
+  geminiInteractions?: { prompt: string; response: string }[]; // Gemini APIとのやり取り履歴
 }
 
 export interface HiddenRule {

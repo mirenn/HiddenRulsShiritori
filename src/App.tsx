@@ -38,8 +38,11 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
   useEffect(() => {
     if (gameState?.winner) {
       setShowGameSummary(true)
+      if (gameState.geminiInteractions) {
+        console.log("Gemini API Interactions:", gameState.geminiInteractions);
+      }
     }
-  }, [gameState?.winner, playerName])
+  }, [gameState?.winner, gameState?.geminiInteractions]) // gameState.geminiInteractions を依存配列に追加
 
   // プレイヤーの自分のインデックスを取得
   const myIndex = gameState?.players.indexOf(playerName) ?? -1

@@ -13,7 +13,7 @@ export interface GeminiResponse {
 }
 
 // Gemini API 呼び出し関数
-export const callGeminiAPIServer = async (prompt: string, apiKey?: string): Promise<boolean> => {
+export const callGeminiAPIServer = async (prompt: string, apiKey?: string, gameState?: GameState): Promise<boolean> => {
   if (!apiKey) {
     console.error('Gemini API key is not set on server.');
     return false;
@@ -31,9 +31,23 @@ export const callGeminiAPIServer = async (prompt: string, apiKey?: string): Prom
     }
     const data: GeminiResponse = await response.json();
     const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase();
+
+    if (gameState) {
+      if (!gameState.geminiInteractions) {
+        gameState.geminiInteractions = [];
+      }
+      gameState.geminiInteractions.push({ prompt, response: resultText || 'Error or No Response' });
+    }
+
     return resultText === 'はい' || resultText === 'yes';
   } catch (error) {
     console.error('Error calling Gemini API on server:', error);
+    if (gameState) {
+      if (!gameState.geminiInteractions) {
+        gameState.geminiInteractions = [];
+      }
+      gameState.geminiInteractions.push({ prompt, response: `Error: ${error}` });
+    }
     return false;
   }
 };
@@ -56,6 +70,8 @@ export interface GameState {
     points: number;
     rulesAchieved: { id: string; description: string }[];
   }[];
+  geminiInteractions?: { prompt: string; response: string }[]; // Gemini APIとのやり取り履歴
+  gameOverReason?: string; // ゲーム終了理由
 }
 
 export interface HiddenRule {
@@ -63,31 +79,31 @@ export interface HiddenRule {
   description: string;
   points: number;
   achievedByPlayer: string | null;
-  checkFunction?: (word: string, previousWordOrApiKey?: string) => Promise<boolean> | boolean;
+  checkFunction?: (word: string, previousWordOrApiKey?: string, gameState?: GameState) => Promise<boolean> | boolean;
   needsApi?: boolean;
 }
 
 // サーバーサイドの全ルールリスト
 export const allServerRules: Omit<HiddenRule, 'achievedByPlayer'>[] = [
   { id: 'rule1', description: '3文字の単語', points: 1, checkFunction: (word) => word.length === 3 },
-  { id: 'rule3', description: '食べ物の名前', points: 1, needsApi: true, checkFunction: async (word, apiKey) => await callGeminiAPIServer(`「${word}」は食べ物の名前ですか？ はい、いいえで答えてください。`, apiKey) },
-  { id: 'rule4', description: '動物の名前', points: 1, needsApi: true, checkFunction: async (word, apiKey) => await callGeminiAPIServer(`「${word}」は動物の名前ですか？ はい、いいえで答えてください。`, apiKey) },
-  { id: 'rule5', description: '色を表す単語', points: 1, needsApi: true, checkFunction: async (word, apiKey) => await callGeminiAPIServer(`「${word}」は色を表す単語ですか？ はい、いいえで答えてください。`, apiKey) },
+  { id: 'rule3', description: '食べ物の名前', points: 1, needsApi: true, checkFunction: async (word, apiKey, gameState) => await callGeminiAPIServer(`「${word}」は食べ物の名前ですか？ はい、いいえで答えてください。`, apiKey, gameState) },
+  { id: 'rule4', description: '動物の名前', points: 1, needsApi: true, checkFunction: async (word, apiKey, gameState) => await callGeminiAPIServer(`「${word}」は動物の名前ですか？ はい、いいえで答えてください。`, apiKey, gameState) },
+  { id: 'rule5', description: '色を表す単語', points: 1, needsApi: true, checkFunction: async (word, apiKey, gameState) => await callGeminiAPIServer(`「${word}」は色を表す単語ですか？ はい、いいえで答えてください。`, apiKey, gameState) },
   { id: 'rule6', description: 'ひらがな5文字以上の単語', points: 2, checkFunction: (word) => word.length >= 5 && /^[ぁ-んー]+$/.test(word) },
   { id: 'rule8', description: '「り」を含む単語', points: 1, checkFunction: (word) => word.includes('り') },
   { id: 'rule9', description: '濁音もしくは半濁音を含む単語', points: 2, checkFunction: (word) => /[\u3099\u309A]/.test(word) },
-  { id: 'rule11', description: '植物の名前', points: 1, needsApi: true, checkFunction: async (word, apiKey) => await callGeminiAPIServer(`「${word}」は植物の名前ですか？ はい、いいえで答えてください。`, apiKey) },
-  { id: 'rule12', description: '乗り物の名前', points: 1, needsApi: true, checkFunction: async (word, apiKey) => await callGeminiAPIServer(`「${word}」は乗り物の名前ですか？ はい、いいえで答えてください。`, apiKey) },
+  { id: 'rule11', description: '植物の名前', points: 1, needsApi: true, checkFunction: async (word, apiKey, gameState) => await callGeminiAPIServer(`「${word}」は植物の名前ですか？ はい、いいえで答えてください。`, apiKey, gameState) },
+  { id: 'rule12', description: '乗り物の名前', points: 1, needsApi: true, checkFunction: async (word, apiKey, gameState) => await callGeminiAPIServer(`「${word}」は乗り物の名前ですか？ はい、いいえで答えてください。`, apiKey, gameState) },
   { id: 'rule13', description: '同じ文字を2つ含む単語 (例:ばなな)', points: 2, checkFunction: (word) => /(\p{L}).*\1/u.test(word) },
   { id: 'rule14', description: '最初の文字と最後の文字が同じ単語', points: 2, checkFunction: (word) => word.length > 1 && word.charAt(0) === word.charAt(word.length - 1) },
-  { id: 'rule15', description: '天候に関する言葉', points: 1, needsApi: true, checkFunction: async (word, apiKey) => await callGeminiAPIServer(`「${word}」は天候に関する言葉ですか？ はい、いいえで答えてください。`, apiKey) },
-  { id: 'rule16', description: 'スポーツの名前', points: 1, needsApi: true, checkFunction: async (word, apiKey) => await callGeminiAPIServer(`「${word}」はスポーツの名前ですか？ はい、いいえで答えてください。`, apiKey) },
-  { id: 'rule19', description: '楽器の名前', points: 1, needsApi: true, checkFunction: async (word, apiKey) => await callGeminiAPIServer(`「${word}」は楽器の名前ですか？ はい、いいえで答えてください。`, apiKey) },
-  { id: 'rule20', description: '丸い形を連想させる言葉', points: 1, needsApi: true, checkFunction: async (word, apiKey) => await callGeminiAPIServer(`「${word}」は丸い形を連想させる言葉ですか？ はい、いいえで答えてください。`, apiKey) },
-  { id: 'rule21', description: '柔らかいものを表す言葉', points: 1, needsApi: true, checkFunction: async (word, apiKey) => await callGeminiAPIServer(`「${word}」は柔らかいものを表す言葉ですか？ はい、いいえで答えてください。`, apiKey) },
-  { id: 'rule22', description: '甘いものを表す言葉', points: 1, needsApi: true, checkFunction: async (word, apiKey) => await callGeminiAPIServer(`「${word}」は甘いものを表す言葉ですか？ はい、いいえで答えてください。`, apiKey) },
-  { id: 'rule23', description: '夏を連想させる言葉', points: 1, needsApi: true, checkFunction: async (word, apiKey) => await callGeminiAPIServer(`「${word}」は夏を連想させる言葉ですか？ はい、いいえで答えてください。`, apiKey) },
-  { id: 'rule24', description: '前の単語と関連性の高い言葉', points: 2, needsApi: true, checkFunction: async (word, previousWord) => await callGeminiAPIServer(`「${word}」は「${previousWord}」と関連性の高い言葉ですか？ はい、いいえで答えてください。`, process.env.GEMINI_API_KEY) }, // APIキーの渡し方を修正
+  { id: 'rule15', description: '天候に関する言葉', points: 1, needsApi: true, checkFunction: async (word, apiKey, gameState) => await callGeminiAPIServer(`「${word}」は天候に関する言葉ですか？ はい、いいえで答えてください。`, apiKey, gameState) },
+  { id: 'rule16', description: 'スポーツの名前', points: 1, needsApi: true, checkFunction: async (word, apiKey, gameState) => await callGeminiAPIServer(`「${word}」はスポーツの名前ですか？ はい、いいえで答えてください。`, apiKey, gameState) },
+  { id: 'rule19', description: '楽器の名前', points: 1, needsApi: true, checkFunction: async (word, apiKey, gameState) => await callGeminiAPIServer(`「${word}」は楽器の名前ですか？ はい、いいえで答えてください。`, apiKey, gameState) },
+  { id: 'rule20', description: '丸い形を連想させる言葉', points: 1, needsApi: true, checkFunction: async (word, apiKey, gameState) => await callGeminiAPIServer(`「${word}」は丸い形を連想させる言葉ですか？ はい、いいえで答えてください。`, apiKey, gameState) },
+  { id: 'rule21', description: '柔らかいものを表す言葉', points: 1, needsApi: true, checkFunction: async (word, apiKey, gameState) => await callGeminiAPIServer(`「${word}」は柔らかいものを表す言葉ですか？ はい、いいえで答えてください。`, apiKey, gameState) },
+  { id: 'rule22', description: '甘いものを表す言葉', points: 1, needsApi: true, checkFunction: async (word, apiKey, gameState) => await callGeminiAPIServer(`「${word}」は甘いものを表す言葉ですか？ はい、いいえで答えてください。`, apiKey, gameState) },
+  { id: 'rule23', description: '夏を連想させる言葉', points: 1, needsApi: true, checkFunction: async (word, apiKey, gameState) => await callGeminiAPIServer(`「${word}」は夏を連想させる言葉ですか？ はい、いいえで答えてください。`, apiKey, gameState) },
+  { id: 'rule24', description: '前の単語と関連性の高い言葉', points: 2, needsApi: true, checkFunction: async (word, previousWord, gameState) => await callGeminiAPIServer(`「${word}」は「${previousWord}」と関連性の高い言葉ですか？ はい、いいえで答えてください。`, process.env.GEMINI_API_KEY, gameState) }, // APIキーの渡し方を修正
   { id: 'rule25', description: '前の単語より文字数が多い言葉', points: 2, checkFunction: (word, previousWord) => !!previousWord && word.length > previousWord.length },
 ];
 
@@ -138,6 +154,7 @@ export async function processPlayerWord(
     reason?: string;
     hint?: { hintTargetRuleId: string; options: string[]; message: string };
     error?: string; // エラーメッセージを返すように変更
+    geminiInteractions?: { prompt: string; response: string }[]; // ゲーム終了時に返す
 }> {
     const previousWord = gameState.history.length > 0 ? gameState.history[gameState.history.length - 1] : undefined;
 
@@ -176,27 +193,31 @@ export async function processPlayerWord(
     let pointsGainedThisTurn = 0;
     const achievedRulesInfo: { ruleId: string; description: string; points: number; }[] = [];
     for (const rule of gameState.hiddenRules) {
-        let ruleMet = false;
+      if (!rule.achievedByPlayer) {
+        let ruleCheckResult = false;
         if (rule.checkFunction) {
-            if (rule.needsApi) {
-                ruleMet = await rule.checkFunction(word, geminiApiKey);
-            } else if (rule.id === 'rule24' && previousWord) {
-                 ruleMet = await (rule.checkFunction as (word: string, previousWord?: string) => Promise<boolean> | boolean)(word, previousWord);
-            } else if (rule.id === 'rule25' && previousWord) {
-                ruleMet = rule.checkFunction(word, previousWord) as boolean;
+          if (rule.needsApi) {
+            if (rule.id === 'rule24' && previousWord) { // 前の単語が必要なルール
+              ruleCheckResult = await rule.checkFunction(word, previousWord, gameState);
+            } else {
+              ruleCheckResult = await rule.checkFunction(word, geminiApiKey, gameState);
             }
-             else if (rule.id !== 'rule24' && rule.id !== 'rule25') {
-                ruleMet = rule.checkFunction(word) as boolean;
-            }
+          } else if (rule.id === 'rule25' && previousWord) { // 前の単語が必要なルール
+            ruleCheckResult = await rule.checkFunction(word, previousWord, gameState); // gameState を追加
+          }
+          else {
+            ruleCheckResult = await rule.checkFunction(word, undefined, gameState); // gameState を追加、previousWordOrApiKey は undefined
+          }
         }
 
-        if (ruleMet) {
+        if (ruleCheckResult) {
             pointsGainedThisTurn += rule.points;
             if (rule.achievedByPlayer === null) {
                 rule.achievedByPlayer = playerName;
             }
             achievedRulesInfo.push({ ruleId: rule.id, description: rule.description, points: rule.points });
         }
+      }
     }
 
     let hintInfo: { hintTargetRuleId: string; options: string[]; message: string } | undefined = undefined;
@@ -231,8 +252,9 @@ export async function processPlayerWord(
     });
 
     if (gameState.scores[playerName] >= 5) {
-        gameState.winner = playerName;
-        return { gameOver: true, winner: playerName, pointsGainedThisTurn, achievedRulesInfo };
+      gameState.winner = playerName;
+      gameState.gameOverReason = `${playerName}が5ポイント獲得しました！`;
+      return { gameOver: true, winner: playerName, reason: gameState.gameOverReason, geminiInteractions: gameState.geminiInteractions };
     }
 
     const allPlayersSaid7Words = gameState.players.every(
@@ -240,18 +262,20 @@ export async function processPlayerWord(
     );
 
     if (allPlayersSaid7Words) {
-        let maxScore = -1;
-        let winners: string[] = [];
-        for (const p of gameState.players) {
-            if (gameState.scores[p] > maxScore) {
-                maxScore = gameState.scores[p];
-                winners = [p];
-            } else if (gameState.scores[p] === maxScore) {
-                winners.push(p);
-            }
+      // スコアが最も高いプレイヤーを勝者とする
+      let maxScore = -1;
+      let winners: string[] = [];
+      for (const player of gameState.players) {
+        if (gameState.scores[player] > maxScore) {
+          maxScore = gameState.scores[player];
+          winners = [player];
+        } else if (gameState.scores[player] === maxScore) {
+          winners.push(player);
         }
-        gameState.winner = winners.length === 1 ? winners[0] : 'draw';
-        return { gameOver: true, winner: gameState.winner, reason: 'allPlayersSaid7Words', pointsGainedThisTurn, achievedRulesInfo };
+      }
+      gameState.winner = winners.join(', '); // 同点の場合は複数プレイヤー
+      gameState.gameOverReason = '各プレイヤーが7単語言い終わりました。';
+      return { gameOver: true, winner: gameState.winner, reason: gameState.gameOverReason, geminiInteractions: gameState.geminiInteractions };
     }
 
     gameState.turn = (gameState.turn + 1) % gameState.players.length;
