@@ -197,6 +197,8 @@ wss.on('connection', (ws: WebSocket) => {
             }));
           });
           broadcastGameState(roomCode);
+          // ★ゲーム終了時にルームを削除
+          rooms.delete(roomCode);
           return;
         }
 
