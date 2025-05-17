@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useWebSocket } from './hooks/useWebSocket'
 import RatingDisplay from './components/RatingDisplay'
+// Add this import
+import { allHiddenRules } from './utils/hiddenRules';
 
 function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName: string }) {
   const [input, setInput] = useState('')
@@ -13,7 +15,7 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
     isConnected, 
     sendWord,
     lastPointsGained,
-    hintMessage // hintMessage をフックから取得
+    // hintMessage // hintMessage をフックから取得 <- This is no longer needed
   } = useWebSocket(roomCode, playerName)
 
   // 入力処理
@@ -238,19 +240,6 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
           </div>
         )}
 
-        {/* ヒント表示 */}
-        {hintMessage && (
-          <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 px-4 py-3 rounded mb-4 shadow-sm">
-            <div className="flex">
-              <div className="py-1"><svg className="fill-current h-6 w-6 text-blue-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M10 20a10 10 0 1 1 0-20 10 10 0 0 1 0 20zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm0-9a1 1 0 0 1 1-1h.01a1 1 0 0 1 0 2H10a1 1 0 0 1-1-1zm0-4a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg></div>
-              <div>
-                <p className="font-bold">ヒント！</p>
-                <p className="text-sm">{hintMessage}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* プレイヤー情報 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           {gameState.players.map((player, index) => (
@@ -323,21 +312,19 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
           </div>
         </div>
 
-        {/* 隠しルールのヒント */}
-        <div className="bg-indigo-50 p-4 rounded-lg shadow-sm">
-          <h3 className="font-bold mb-2 text-indigo-700">ヒント</h3>
-          <p className="text-gray-700 italic">
-            このゲームには3つの隠しルールがあります。条件を満たす単語を言うとポイントが獲得できます。
-          </p>
-        </div>
-
-        {/* 隠しルールのヒント (これは固定表示なので、動的なヒントとは別) */}
+        {/* New Hidden Rules Display */}
         <div className="bg-indigo-50 p-4 rounded-lg shadow-sm mt-6">
-          <h3 className="font-bold mb-2 text-indigo-700">隠しルールについて</h3>
-          <p className="text-gray-700 italic">
-            このゲームには3つの隠しルールがあります。条件を満たす単語を言うとポイントが獲得できます。
-            4ターン連続で誰もポイントを獲得できない場合、隠しルールのうち1つに関するヒントが表示されます。
+          <h3 className="font-bold mb-2 text-indigo-700">隠しルール候補</h3>
+          <p className="text-sm text-gray-600 mb-3 italic">
+            以下の9つのルールのうち、3つが実際の隠しルールです。特定の条件を満たす単語を言うとポイントを獲得できます。
           </p>
+          <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            {allHiddenRules.map((rule: { id: string; description: string }) => (
+              <li key={rule.id} className="bg-white p-2 rounded shadow-sm text-sm text-gray-700">
+                {rule.description}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </div>
@@ -407,7 +394,7 @@ function App() {
         </h1>
         
         <div className="space-y-6 w-full">
-          <div>
+          <div></div>
             <div className="flex justify-between items-center mb-1">
               <label className="block text-gray-700 font-semibold text-lg">ルーム番号（4桁）</label>
               <div className="relative group">
