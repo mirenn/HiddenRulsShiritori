@@ -13,7 +13,8 @@ export const useWebSocket = (
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [lastPointsGained, setLastPointsGained] = useState<{ player: string; points: number } | null>(null);
+  const [lastPointsGained, setLastPointsGained] = useState<{ player: string; points: number; rulesAchieved?: {description: string}[] } | null>(null);
+  const [hintMessage, setHintMessage] = useState<string | null>(null); // ヒントメッセージ用のstate
 
   // 接続処理
   useEffect(() => {
@@ -62,6 +63,11 @@ export const useWebSocket = (
         switch (data.type) {
           case 'gameState':
             setGameState(data.gameState);
+            // gameStateが更新されたらエラーはクリアする（サーバー側で解決された可能性）
+            // ただし、接続エラーや致命的なエラーは残す場合もあるので、状況に応じて調整
+            if (error && !error.includes('接続')) {
+                setError(null);
+            }
             break;
           case 'error':
             setError(data.message);
@@ -69,16 +75,25 @@ export const useWebSocket = (
           case 'pointGained':
             setLastPointsGained({
               player: data.player,
-              points: data.points
+              points: data.points,
+              rulesAchieved: data.rulesAchieved // 達成したルールの詳細
             });
             // 5秒後に通知を消す
             setTimeout(() => setLastPointsGained(null), 5000);
             break;
           case 'gameOver':
-            // ゲーム終了時の処理は gameState.winner で処理
+            // ゲーム終了メッセージに理由が含まれるようになったため、gameStateを更新してUI側で表示
+            setGameState(prevState => prevState ? ({ ...prevState, winner: data.winner, gameOverReason: data.reason }) : null);
+            break;
+          case 'hint': // ヒントメッセージの処理
+            setHintMessage(data.message);
+            // 10秒後にヒントを消す（時間は調整可能）
+            setTimeout(() => setHintMessage(null), 10000);
             break;
           case 'playerDisconnected':
             setError(`プレイヤー ${data.player} が切断しました`);
+            // ゲーム状態も更新して、切断されたプレイヤーの情報を反映させるなどが必要な場合がある
+            // ここではエラー表示のみ
             break;
           default:
             console.log('不明なメッセージタイプ:', data);
@@ -120,7 +135,8 @@ export const useWebSocket = (
     error,
     isConnected,
     sendWord,
-    lastPointsGained
+    lastPointsGained,
+    hintMessage // hintMessageを返す
   };
 };
 

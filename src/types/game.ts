@@ -5,6 +5,9 @@ export interface GameState {
   hiddenRules: HiddenRule[];
   scores: { [player: string]: number };
   winner: string | null;
+  wordsSaidCount?: { [player: string]: number }; // オプショナルに変更 (サーバーからの初期データに含まれない場合があるため)
+  noPointTurns?: number; // オプショナルに変更
+  gameOverReason?: string; // ゲーム終了理由を追加
 }
 
 export interface HiddenRule {

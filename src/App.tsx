@@ -12,7 +12,8 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
     error, 
     isConnected, 
     sendWord,
-    lastPointsGained
+    lastPointsGained,
+    hintMessage // hintMessage をフックから取得
   } = useWebSocket(roomCode, playerName)
 
   // 入力処理
@@ -91,12 +92,21 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
 
   // ゲーム終了表示
   if (showGameSummary) {
+    let gameEndReasonMessage = '';
+    if (gameState?.gameOverReason === 'allPlayersSaid10Words') {
+      gameEndReasonMessage = '各プレイヤーが10単語言い終わったため、ゲーム終了です。';
+    }
+
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100">
         <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-lg mx-auto transition-all duration-300">
           <h2 className="text-2xl font-bold mb-4 text-center text-indigo-700">ゲーム終了</h2>
+          {gameEndReasonMessage && (
+            <p className="text-center mb-2 text-gray-600">{gameEndReasonMessage}</p>
+          )}
           <p className="text-center mb-6 text-2xl font-bold text-gray-800">
-            {gameState.winner === playerName ? '🎉 勝利しました！ 🎉' : '😔 敗北しました... 😔'}
+            {gameState.winner === 'draw' ? '引き分けです！' : 
+             gameState.winner === playerName ? '🎉 勝利しました！ 🎉' : '😔 敗北しました... 😔'}
           </p>
           
           <div className="mb-6 bg-gray-50 p-4 rounded-lg">
@@ -178,11 +188,26 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
         {/* ポイント獲得通知 */}
         {lastPointsGained && (
           <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 px-4 py-3 rounded mb-4 animate-pulse shadow-sm">
-            <div className="flex items-center">
-              <svg className="h-6 w-6 text-yellow-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+            <div className="flex items-center mb-1">
               <strong>{lastPointsGained.player}</strong>が条件を満たして<strong> {lastPointsGained.points}ポイント </strong>獲得しました！
+            </div>
+            {lastPointsGained.rulesAchieved && lastPointsGained.rulesAchieved.length > 0 && (
+              <div className="text-sm">
+                達成したルール: {lastPointsGained.rulesAchieved.map(r => r.description).join(', ')}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ヒント表示 */}
+        {hintMessage && (
+          <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 px-4 py-3 rounded mb-4 shadow-sm">
+            <div className="flex">
+              <div className="py-1"><svg className="fill-current h-6 w-6 text-blue-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M10 20a10 10 0 1 1 0-20 10 10 0 0 1 0 20zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm0-9a1 1 0 0 1 1-1h.01a1 1 0 0 1 0 2H10a1 1 0 0 1-1-1zm0-4a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg></div>
+              <div>
+                <p className="font-bold">ヒント！</p>
+                <p className="text-sm">{hintMessage}</p>
+              </div>
             </div>
           </div>
         )}
@@ -198,6 +223,9 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
               <div className="flex justify-between items-center">
                 <span className="font-bold text-gray-800">{player}</span>
                 <span className="font-bold text-lg bg-white px-3 py-1 rounded-full shadow-sm text-indigo-700">{gameState.scores[player]} pt</span>
+              </div>
+              <div className="mt-1 text-sm text-gray-600">
+                言った単語数: {gameState.wordsSaidCount?.[player] || 0} / 10
               </div>
               <div className="mt-2">
                 <RatingDisplay playerName={player} />
@@ -257,6 +285,15 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
           <h3 className="font-bold mb-2 text-indigo-700">ヒント</h3>
           <p className="text-gray-700 italic">
             このゲームには3つの隠しルールがあります。条件を満たす単語を言うとポイントが獲得できます。
+          </p>
+        </div>
+
+        {/* 隠しルールのヒント (これは固定表示なので、動的なヒントとは別) */}
+        <div className="bg-indigo-50 p-4 rounded-lg shadow-sm mt-6">
+          <h3 className="font-bold mb-2 text-indigo-700">隠しルールについて</h3>
+          <p className="text-gray-700 italic">
+            このゲームには3つの隠しルールがあります。条件を満たす単語を言うとポイントが獲得できます。
+            2ターン連続で誰もポイントを獲得できない場合、隠しルールのうち1つに関するヒントが表示されます。
           </p>
         </div>
       </div>
