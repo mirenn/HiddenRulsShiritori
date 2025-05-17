@@ -25,7 +25,11 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!input) return
-    
+    // 既出単語チェック
+    if (gameState && gameState.history.includes(input)) {
+      alert('この単語はすでに使われています');
+      return;
+    }
     sendWord(input)
     setInput('')
   }
