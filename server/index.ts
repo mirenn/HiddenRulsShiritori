@@ -418,7 +418,6 @@ wss.on('connection', (ws: WebSocket) => {
 // サーバーサイドの全ルールリスト (generateHiddenRules内から移動)
 const allServerRules: Omit<HiddenRule, 'achievedByPlayer'>[] = [
   { id: 'rule1', description: '3文字の単語', points: 1, checkFunction: (word) => word.length === 3 },
-  { id: 'rule_n_ending', description: '「ん」で終わる単語 (通常は反則)', points: 2, checkFunction: (word) => word.endsWith('ん') || word.endsWith('ン') },
   { id: 'rule3', description: '食べ物の名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は食べ物の名前ですか？ はい、いいえで答えてください。`) },
   { id: 'rule4', description: '動物の名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は動物の名前ですか？ はい、いいえで答えてください。`) },
   { id: 'rule5', description: '色を表す単語', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は色を表す単語ですか？ はい、いいえで答えてください。`) },

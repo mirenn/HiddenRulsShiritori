@@ -3,7 +3,6 @@ import type { HiddenRule } from '../types/game';
 // サンプルの隠しルール定義
 export const allHiddenRules: Omit<HiddenRule, 'achievedByPlayer' | 'checkFunction' | 'needsApi'>[] = [
   { id: 'rule1', description: '3文字の単語', points: 1 },
-  { id: 'rule_n_ending', description: '「ん」で終わる単語 (通常は反則)', points: 2 },
   { id: 'rule3', description: '食べ物の名前', points: 1 },
   { id: 'rule4', description: '動物の名前', points: 1 },
   { id: 'rule5', description: '色を表す単語', points: 1 },
@@ -58,7 +57,7 @@ export const checkHiddenRule = async (word: string, rule: HiddenRule): Promise<b
   switch (rule.id) {
     case 'rule1': // 3文字の単語
       return word.length === 3;
-    case 'rule2': // 「ん」で終わる単語
+    case 'rule_n_ending': // 「ん」で終わる単語
       return word.endsWith('ん');
     case 'rule6': // ひらがな5文字以上の単語
       return word.length >= 5 && /^[ぁ-んー]+$/.test(word);
