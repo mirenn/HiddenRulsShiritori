@@ -317,9 +317,9 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
             以下の9つのルールのうち、3つが実際の隠しルールです。特定の条件を満たす単語を言うとポイントを獲得できます。
           </p>
           <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {gameState.candidateHiddenRules && gameState.candidateHiddenRules.map((rule: { id: string; description: string }) => (
+            {gameState.candidateHiddenRules && gameState.candidateHiddenRules.map((rule: { id: string; description: string; points: number }) => (
               <li key={rule.id} className="bg-white p-2 rounded shadow-sm text-sm text-gray-700">
-                {rule.description}
+                {rule.description} ({rule.points} pt)
               </li>
             ))}
           </ul>
