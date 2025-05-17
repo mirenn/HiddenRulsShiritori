@@ -211,6 +211,11 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-200">
           <div className="mb-2 sm:mb-0">
             <h2 className="text-xl font-bold text-indigo-700">ルーム: {roomCode}</h2>
+            {gameState.firstCharacter && gameState.history.length === 0 && (
+              <p className="text-sm text-gray-600 mt-1">
+                最初の文字: <span className="font-bold text-lg text-red-500">{gameState.firstCharacter}</span>
+              </p>
+            )}
           </div>
           <div className="text-center sm:text-right">
             <p className={`font-bold text-lg ${isMyTurn ? 'text-green-600' : 'text-gray-600'} px-4 py-1 rounded-full ${isMyTurn ? 'bg-green-100' : 'bg-gray-100'}`}>

@@ -79,6 +79,7 @@ interface GameState {
   winner: string | null;
   wordsSaidCount: { [player: string]: number }; // 各プレイヤーが言った単語数
   noPointTurns: number; // ポイント獲得なしの連続ターン数
+  firstCharacter?: string; // ★追加: 最初の文字
   historyDetails?: {
     player: string;
     word: string;
@@ -107,6 +108,12 @@ wss.on('connection', (ws: WebSocket) => {
   let roomCode: string | null = null;
   let playerName: string | null = null;
 
+  // ★追加: ランダムなひらがなを生成する関数 (「ん」「を」などを除外)
+  function getRandomHiragana(): string {
+    const hiragana = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわ".split("");
+    return hiragana[Math.floor(Math.random() * hiragana.length)];
+  }
+
   // メッセージ受信時の処理
   ws.on('message', async (messageData: Buffer | ArrayBuffer | Buffer[]) => {
     try {
@@ -123,6 +130,7 @@ wss.on('connection', (ws: WebSocket) => {
         if (roomCode && !rooms.has(roomCode)) {
           const actualHiddenRules = generateHiddenRules(); // 実際の隠しルール3つ
           const candidateRules = generateCandidateHiddenRules(actualHiddenRules, allServerRules); // 候補のルール9つ
+          const firstCharacter = getRandomHiragana(); // ★追加: 最初の文字をランダムに決定
           rooms.set(roomCode, {
             clients: new Map(),
             gameState: {
@@ -136,6 +144,7 @@ wss.on('connection', (ws: WebSocket) => {
               winner: null,
               wordsSaidCount: {}, // 初期化
               noPointTurns: 0, // 初期化
+              firstCharacter, // ★追加
             }
           });
         }
@@ -222,6 +231,12 @@ wss.on('connection', (ws: WebSocket) => {
             }));
             return;
           }
+        } else if (gameState.firstCharacter && word.charAt(0) !== gameState.firstCharacter) { // ★追加: 最初の単語の最初の文字チェック
+          ws.send(JSON.stringify({
+            type: 'error',
+            message: `最初の単語は「${gameState.firstCharacter}」から始めてください`
+          }));
+          return;
         }
 
         // 「ん」で終わるチェック

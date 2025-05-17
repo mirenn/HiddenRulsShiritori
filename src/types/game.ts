@@ -9,6 +9,7 @@ export interface GameState {
   wordsSaidCount?: { [player: string]: number }; // オプショナルに変更 (サーバーからの初期データに含まれない場合があるため)
   noPointTurns?: number; // オプショナルに変更
   gameOverReason?: string; // ゲーム終了理由を追加
+  firstCharacter?: string; // ★追加
   historyDetails?: {
     player: string;
     word: string;
