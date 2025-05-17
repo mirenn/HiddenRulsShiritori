@@ -7,19 +7,17 @@ export const allHiddenRules: Omit<HiddenRule, 'achievedByPlayer' | 'checkFunctio
   { id: 'rule4', description: '動物の名前', points: 1 },
   { id: 'rule5', description: '色を表す単語', points: 1 },
   { id: 'rule6', description: 'ひらがな5文字以上の単語', points: 2 },
-  { id: 'rule7', description: 'ひらがなの単語', points: 1 },
   { id: 'rule8', description: '最後に「り」がつく言葉', points: 1 },
   { id: 'rule9', description: '「ぱ」から始まる単語', points: 2 },
   { id: 'rule11', description: '植物の名前', points: 1 },
   { id: 'rule12', description: '乗り物の名前', points: 1 },
-  { id: 'rule13', description: '同じ文字が2つ続く単語 (例: りんご、バナナ)', points: 2 },
+  { id: 'rule13', description: '同じ文字が2つ続く単語 (例: ばなな)', points: 2 },
   { id: 'rule14', description: '最初の文字と最後の文字が同じ単語', points: 2 },
   { id: 'rule15', description: '天候に関する言葉', points: 1 },
   { id: 'rule16', description: 'スポーツの名前', points: 1 },
   { id: 'rule17', description: '「き」で終わる3文字の単語', points: 2 },
   { id: 'rule18', description: '国名', points: 2 },
   { id: 'rule19', description: '楽器の名前', points: 1 },
-  { id: 'rule20', description: 'ひらがなのみで構成される4文字の単語', points: 1 },
 ];
 
 /**
@@ -61,8 +59,6 @@ export const checkHiddenRule = async (word: string, rule: HiddenRule): Promise<b
       return word.endsWith('ん');
     case 'rule6': // ひらがな5文字以上の単語
       return word.length >= 5 && /^[ぁ-んー]+$/.test(word);
-    case 'rule7': // ひらがなの単語
-      return /^[ぁ-んー]+$/.test(word);
     case 'rule8': // 最後に「り」がつく言葉
       return word.endsWith('り');
     case 'rule9': // 「パ」から始まる単語

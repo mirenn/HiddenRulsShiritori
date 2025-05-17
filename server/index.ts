@@ -422,19 +422,17 @@ const allServerRules: Omit<HiddenRule, 'achievedByPlayer'>[] = [
   { id: 'rule4', description: '動物の名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は動物の名前ですか？ はい、いいえで答えてください。`) },
   { id: 'rule5', description: '色を表す単語', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は色を表す単語ですか？ はい、いいえで答えてください。`) },
   { id: 'rule6', description: 'ひらがな5文字以上の単語', points: 2, checkFunction: (word) => word.length >= 5 && /^[ぁ-んー]+$/.test(word) },
-  { id: 'rule7', description: 'ひらがなの単語', points: 1, checkFunction: (word) => /^[ぁ-んー]+$/.test(word) },
   { id: 'rule8', description: '最後に「り」がつく言葉', points: 1, checkFunction: (word) => word.endsWith('り') },
   { id: 'rule9', description: '「ぱ」から始まる単語', points: 2, checkFunction: (word) => word.startsWith('パ') },
   { id: 'rule11', description: '植物の名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は植物の名前ですか？ はい、いいえで答えてください。`) },
   { id: 'rule12', description: '乗り物の名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は乗り物の名前ですか？ はい、いいえで答えてください。`) },
-  { id: 'rule13', description: '同じ文字が2つ続く単語 (例: りんご、バナナ)', points: 2, checkFunction: (word) => /(\p{L})\1/u.test(word) },
+  { id: 'rule13', description: '同じ文字が2つ続く単語 (例:ばなな)', points: 2, checkFunction: (word) => /(\p{L})\1/u.test(word) },
   { id: 'rule14', description: '最初の文字と最後の文字が同じ単語', points: 2, checkFunction: (word) => word.length > 1 && word.charAt(0) === word.charAt(word.length - 1) },
   { id: 'rule15', description: '天候に関する言葉', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は天候に関する言葉ですか？ はい、いいえで答えてください。`) },
   { id: 'rule16', description: 'スポーツの名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」はスポーツの名前ですか？ はい、いいえで答えてください。`) },
   { id: 'rule17', description: '「き」で終わる3文字の単語', points: 2, checkFunction: (word) => word.length === 3 && word.endsWith('き') },
   { id: 'rule18', description: '国名', points: 2, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は国名ですか？ はい、いいえで答えてください。`) },
   { id: 'rule19', description: '楽器の名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は楽器の名前ですか？ はい、いいえで答えてください。`) },
-  { id: 'rule20', description: 'ひらがなのみで構成される4文字の単語', points: 1, checkFunction: (word) => word.length === 4 && /^[ぁ-んー]+$/.test(word) },
 ];
 
 // 隠しルールを生成する関数 (サーバーサイドで定義)
