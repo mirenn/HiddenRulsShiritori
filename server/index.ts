@@ -5,48 +5,21 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fetch from 'node-fetch';
+
+// gameLogic.tsから必要なものをインポート
+import {
+  GameState,
+  HiddenRule,
+  allServerRules, // allServerRulesをインポート
+  generateHiddenRules,
+  generateCandidateHiddenRules,
+  getRandomHiragana,
+  processPlayerWord,
+  callGeminiAPIServer // callGeminiAPIServerをインポート
+} from './gameLogic';
 
 // 環境変数の読み込み
 dotenv.config();
-
-// Gemini APIレスポンスの型定義
-interface GeminiResponse {
-  candidates?: Array<{
-    content?: {
-      parts?: Array<{
-        text?: string;
-      }>;
-    };
-  }>;
-}
-
-// グローバルスコープに Gemini API 呼び出し関数を定義
-const callGeminiAPIServer = async (prompt: string): Promise<boolean> => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.error('Gemini API key is not set on server.');
-    return false;
-  }
-  const geminiApiEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent';
-  try {
-    const response = await fetch(`${geminiApiEndpoint}?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-    });
-    if (!response.ok) {
-      console.error('Gemini API request failed on server:', response.status, await response.text());
-      return false;
-    }
-    const data: GeminiResponse = await response.json();
-    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase();
-    return resultText === 'はい' || resultText === 'yes';
-  } catch (error) {
-    console.error('Error calling Gemini API on server:', error);
-    return false;
-  }
-};
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -68,35 +41,6 @@ const server = http.createServer(app);
 // WebSocketサーバーの作成
 const wss = new WebSocketServer({ server });
 
-// ルームの状態を保持するオブジェクト
-interface GameState {
-  players: string[];
-  history: string[];
-  turn: number;
-  hiddenRules: HiddenRule[]; // 実際の隠しルール (3つ)
-  candidateHiddenRules: Omit<HiddenRule, 'checkFunction' | 'needsApi' | 'achievedByPlayer'>[]; // 候補となる隠しルール (9つ)
-  scores: { [player: string]: number };
-  winner: string | null;
-  wordsSaidCount: { [player: string]: number }; // 各プレイヤーが言った単語数
-  noPointTurns: number; // ポイント獲得なしの連続ターン数
-  firstCharacter?: string; // ★追加: 最初の文字
-  historyDetails?: {
-    player: string;
-    word: string;
-    points: number;
-    rulesAchieved: { id: string; description: string }[];
-  }[];
-}
-
-interface HiddenRule {
-  id: string; // ルール識別のためにidを追加
-  description: string;
-  points: number; // ポイントもサーバーで管理
-  achievedByPlayer: string | null; // どのプレイヤーが達成したか
-  checkFunction?: (word: string, apiKey?: string) => Promise<boolean> | boolean;
-  needsApi?: boolean; // API呼び出しが必要なルールのフラグ
-}
-
 // ルーム管理用のマップ
 const rooms = new Map<string, { 
   clients: Map<WebSocket, string>,
@@ -107,12 +51,6 @@ const rooms = new Map<string, {
 wss.on('connection', (ws: WebSocket) => {
   let roomCode: string | null = null;
   let playerName: string | null = null;
-
-  // ★追加: ランダムなひらがなを生成する関数 (「ん」「を」などを除外)
-  function getRandomHiragana(): string {
-    const hiragana = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわ".split("");
-    return hiragana[Math.floor(Math.random() * hiragana.length)];
-  }
 
   // メッセージ受信時の処理
   ws.on('message', async (messageData: Buffer | ArrayBuffer | Buffer[]) => {
@@ -204,12 +142,9 @@ wss.on('connection', (ws: WebSocket) => {
 
         const gameState = room.gameState;
 
-        // 最後の単語を取得
-        const previousWord = gameState.history.length > 0 ? gameState.history[gameState.history.length - 1] : undefined;
-
         // プレイヤーのインデックスを取得
         const playerIndex = gameState.players.indexOf(playerName);
-        
+
         // ターンチェック
         if (playerIndex !== gameState.turn) {
           ws.send(JSON.stringify({
@@ -219,172 +154,51 @@ wss.on('connection', (ws: WebSocket) => {
           return;
         }
 
-        // しりとりルールのチェック
-        if (gameState.history.length > 0) {
-          const prevWord = gameState.history[gameState.history.length - 1];
-          const lastChar = prevWord.endsWith('ー') ? prevWord.charAt(prevWord.length - 2) : prevWord.charAt(prevWord.length - 1);
-          const firstChar = word.startsWith('ー') ? word.charAt(1) : word.charAt(0);
-          if (firstChar.toLowerCase() !== lastChar.toLowerCase()) { // 大文字・小文字を区別しない
-            ws.send(JSON.stringify({
-              type: 'error',
-              message: '前の単語の最後の文字で始めてください'
-            }));
-            return;
-          }
-        } else if (gameState.firstCharacter && word.charAt(0) !== gameState.firstCharacter) { // ★追加: 最初の単語の最初の文字チェック
-          ws.send(JSON.stringify({
-            type: 'error',
-            message: `最初の単語は「${gameState.firstCharacter}」から始めてください`
-          }));
+        // gameLogic.tsのprocessPlayerWord関数を呼び出す
+        const gameResult = await processPlayerWord(gameState, playerName, word, ws, process.env.GEMINI_API_KEY);
+
+        if (gameResult.error) {
+          // エラーメッセージはprocessPlayerWord内で送信されるので、ここでは何もしないか、ログ記録など
+          console.log(`Error for player ${playerName} in room ${roomCode}: ${gameResult.error}`);
           return;
         }
 
-        // 「ん」で終わるチェック
-        const nEndingRule = gameState.hiddenRules.find(rule => rule.id === 'rule_n_ending');
-        let isNEndingAllowedByRule = false;
-        if (nEndingRule && nEndingRule.checkFunction) {
-          if (nEndingRule.needsApi) {
-            isNEndingAllowedByRule = await nEndingRule.checkFunction(word, process.env.GEMINI_API_KEY);
-          } else {
-            isNEndingAllowedByRule = nEndingRule.checkFunction(word) as boolean;
-          }
-        }
-
-        if ((word.endsWith('ん') || word.endsWith('ン')) && !isNEndingAllowedByRule) {
-          ws.send(JSON.stringify({ type: 'error', message: '「ん」で終わる単語は使えません (特別なルールがない限り)' }));
-          return;
-        }
-
-        // 単語を言った数をカウント
-        gameState.wordsSaidCount[playerName] = (gameState.wordsSaidCount[playerName] || 0) + 1;
-
-        // 履歴に追加
-        gameState.history.push(word);
-
-        // 隠しルールのチェックとポイント加算
-        let pointsGainedThisTurn = 0;
-        const achievedRulesInfo: { ruleId: string; description: string; points: number; }[] = [];
-        for (const rule of gameState.hiddenRules) {
-          // 他のプレイヤーが達成したルールでもポイント獲得できるように条件を変更
-          // if (rule.achievedByPlayer === null || rule.achievedByPlayer === playerName) { 
-            let ruleMet = false;
-            if (rule.needsApi && rule.checkFunction) {
-              ruleMet = await rule.checkFunction(word, process.env.GEMINI_API_KEY);
-            } else if (rule.checkFunction) {
-              if (rule.id === 'rule24' && previousWord) { // 新しいルールのための特別処理
-                ruleMet = await (rule.checkFunction as (word: string, previousWord?: string) => Promise<boolean> | boolean)(word, previousWord);
-              } else if (rule.id !== 'rule24') {
-                ruleMet = rule.checkFunction(word) as boolean;
-              }
-            }
-
-            if (ruleMet) {
-              pointsGainedThisTurn += rule.points;
-              // gameState.scores[playerName] += rule.points; // ポイントはまとめて加算
-              if (rule.achievedByPlayer === null) { // 初めてこのルールを達成した場合
-                rule.achievedByPlayer = playerName; // 達成者を記録 (クライアントには送信しない内部状態)
-              }
-              achievedRulesInfo.push({ ruleId: rule.id, description: rule.description, points: rule.points});
-            }
-          // }
-        }
-        
-        // ポイント加算
-        if (pointsGainedThisTurn > 0) {
-          gameState.scores[playerName] += pointsGainedThisTurn;
-          gameState.noPointTurns = 0; // ポイント獲得したのでリセット
-          // ポイント獲得通知 (どのルールで獲得したかも含める)
+        if (gameResult.pointsGainedThisTurn !== undefined && gameResult.pointsGainedThisTurn > 0) {
+          // ポイント獲得通知
           room.clients.forEach((clientName, client) => {
             client.send(JSON.stringify({
               type: 'pointGained',
               player: playerName,
-              points: pointsGainedThisTurn,
-              rulesAchieved: achievedRulesInfo, // 達成したルールの詳細
+              points: gameResult.pointsGainedThisTurn,
+              rulesAchieved: gameResult.achievedRulesInfo,
               newScore: gameState.scores[playerName!],
-              // 更新されたhiddenRulesの状態も送る (achievedByPlayerが更新されているため)
               updatedHiddenRules: gameState.hiddenRules.map(({ id, description, points, achievedByPlayer }) => ({ id, description, points, achievedByPlayer }))
             }));
           });
-        } else {
-          gameState.noPointTurns++; // ポイント獲得なし
         }
-        
-        // 勝利判定
-        if (gameState.scores[playerName] >= 5) {
-          gameState.winner = playerName;
-          
-          // 勝利通知
+
+        if (gameResult.hint) {
+          room.clients.forEach((clientName, client) => {
+            client.send(JSON.stringify({
+              type: 'hint',
+              hintTargetRuleId: gameResult.hint!.hintTargetRuleId,
+              options: gameResult.hint!.options,
+              message: gameResult.hint!.message
+            }));
+          });
+        }
+
+        if (gameResult.gameOver) {
           room.clients.forEach((clientName, client) => {
             client.send(JSON.stringify({
               type: 'gameOver',
-              winner: playerName
+              winner: gameResult.winner,
+              reason: gameResult.reason
             }));
           });
-          broadcastGameState(roomCode); // 状態更新を通知して終了
+          broadcastGameState(roomCode);
           return;
         }
-
-        // 終了判定 (各プレイヤーが7単語言い終わったか)
-        const allPlayersSaid7Words = gameState.players.every(
-          player => (gameState.wordsSaidCount[player] || 0) >= 7
-        );
-
-        if (allPlayersSaid7Words) {
-          // ポイントが多いプレイヤーを勝者とする
-          let maxScore = -1;
-          let winners: string[] = [];
-          for (const player of gameState.players) {
-            if (gameState.scores[player] > maxScore) {
-              maxScore = gameState.scores[player];
-              winners = [player];
-            } else if (gameState.scores[player] === maxScore) {
-              winners.push(player);
-            }
-          }
-          gameState.winner = winners.length === 1 ? winners[0] : 'draw'; // 引き分けも考慮
-          
-          room.clients.forEach((clientName, client) => {
-            client.send(JSON.stringify({
-              type: 'gameOver',
-              winner: gameState.winner,
-              reason: 'allPlayersSaid7Words' // 理由を更新
-            }));
-          });
-          broadcastGameState(roomCode); // 状態更新を通知して終了
-          return;
-        }
-
-        // ポイント加算や勝利判定などの直後に履歴詳細を追加
-        if (!gameState.historyDetails) gameState.historyDetails = [];
-        gameState.historyDetails.push({
-          player: playerName,
-          word,
-          points: pointsGainedThisTurn,
-          rulesAchieved: achievedRulesInfo.map(r => ({ id: r.ruleId, description: r.description }))
-        });
-
-        // ヒント機能
-        if (gameState.noPointTurns >= 2) {
-          const unachievedRules = gameState.hiddenRules.filter(rule => rule.achievedByPlayer === null);
-          if (unachievedRules.length > 0) {
-            const hintRule = unachievedRules[Math.floor(Math.random() * unachievedRules.length)];
-            const dummyRuleDescriptions = generateDummyRuleDescriptions(allServerRules, hintRule, 2);
-            const hintOptions = [hintRule.description, ...dummyRuleDescriptions].sort(() => 0.5 - Math.random());
-
-            room.clients.forEach((clientName, client) => {
-              client.send(JSON.stringify({
-                type: 'hint',
-                hintTargetRuleId: hintRule.id, // どのルールに対するヒントか（デバッグ用、クライアント表示は任意）
-                options: hintOptions,
-                message: `ヒント：隠し条件のうち一つは次のいずれかです： ${hintOptions.join('、')}`
-              }));
-            });
-            gameState.noPointTurns = 0; // ヒントを出したらリセット
-          }
-        }
-
-        // ターン交代
-        gameState.turn = (gameState.turn + 1) % gameState.players.length;
 
         // 全クライアントに更新通知
         broadcastGameState(roomCode);
@@ -437,58 +251,6 @@ wss.on('connection', (ws: WebSocket) => {
     }
   });
 });
-
-// サーバーサイドの全ルールリスト (generateHiddenRules内から移動)
-const allServerRules: Omit<HiddenRule, 'achievedByPlayer'>[] = [
-  { id: 'rule1', description: '3文字の単語', points: 1, checkFunction: (word) => word.length === 3 },
-  { id: 'rule3', description: '食べ物の名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は食べ物の名前ですか？ はい、いいえで答えてください。`) },
-  { id: 'rule4', description: '動物の名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は動物の名前ですか？ はい、いいえで答えてください。`) },
-  { id: 'rule5', description: '色を表す単語', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は色を表す単語ですか？ はい、いいえで答えてください。`) },
-  { id: 'rule6', description: 'ひらがな5文字以上の単語', points: 2, checkFunction: (word) => word.length >= 5 && /^[ぁ-んー]+$/.test(word) },
-  { id: 'rule8', description: '「り」を含む単語', points: 1, checkFunction: (word) => word.includes('り') },
-  { id: 'rule9', description: '濁音もしくは半濁音を含む単語', points: 2, checkFunction: (word) => /[\u3099\u309A]/.test(word) },
-  { id: 'rule11', description: '植物の名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は植物の名前ですか？ はい、いいえで答えてください。`) },
-  { id: 'rule12', description: '乗り物の名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は乗り物の名前ですか？ はい、いいえで答えてください。`) },
-  { id: 'rule13', description: '同じ文字を2つ含む単語 (例:ばなな)', points: 2, checkFunction: (word) => /(\p{L}).*\1/u.test(word) },
-  { id: 'rule14', description: '最初の文字と最後の文字が同じ単語', points: 2, checkFunction: (word) => word.length > 1 && word.charAt(0) === word.charAt(word.length - 1) },
-  { id: 'rule15', description: '天候に関する言葉', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は天候に関する言葉ですか？ はい、いいえで答えてください。`) },
-  { id: 'rule16', description: 'スポーツの名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」はスポーツの名前ですか？ はい、いいえで答えてください。`) },
-  { id: 'rule19', description: '楽器の名前', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は楽器の名前ですか？ はい、いいえで答えてください。`) },
-  { id: 'rule20', description: '丸い形を連想させる言葉', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は丸い形を連想させる言葉ですか？ はい、いいえで答えてください。`) },
-  { id: 'rule21', description: '柔らかいものを表す言葉', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は柔らかいものを表す言葉ですか？ はい、いいえで答えてください。`) },
-  { id: 'rule22', description: '甘いものを表す言葉', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は甘いものを表す言葉ですか？ はい、いいえで答えてください。`) },
-  { id: 'rule23', description: '夏を連想させる言葉', points: 1, needsApi: true, checkFunction: async (word) => await callGeminiAPIServer(`「${word}」は夏を連想させる言葉ですか？ はい、いいえで答えてください。`) },
-  { id: 'rule24', description: '前の単語と関連性の高い言葉', points: 2, needsApi: true, checkFunction: async (word, previousWord) => await callGeminiAPIServer(`「${word}」は「${previousWord}」と関連性の高い言葉ですか？ はい、いいえで答えてください。`) },
-  { id: 'rule25', description: '前の単語より文字数が多い言葉', points: 2, checkFunction: (word, previousWord) => !!previousWord && word.length > previousWord.length },
-];
-
-// 隠しルールを生成する関数 (サーバーサイドで定義)
-// ルール定義にid, points, needsApi, checkFunctionを追加
-function generateHiddenRules(): HiddenRule[] {
-  const shuffled = [...allServerRules].sort(() => 0.5 - Math.random());
-  // achievedByPlayer を null で初期化して完全な HiddenRule 型にする
-  return shuffled.slice(0, 3).map(rule => ({ ...rule, achievedByPlayer: null } as HiddenRule));
-}
-
-// 候補となる隠しルールを9つ生成する関数
-function generateCandidateHiddenRules(actualRules: HiddenRule[], allRules: Omit<HiddenRule, 'achievedByPlayer'>[]): Omit<HiddenRule, 'checkFunction' | 'needsApi' | 'achievedByPlayer'>[] {
-  const actualRuleDescriptions = actualRules.map(r => r.description);
-  const dummyRules = allRules
-    .filter(rule => !actualRuleDescriptions.includes(rule.description)) // 実際とは異なるルールを選ぶ
-    .sort(() => 0.5 - Math.random())
-    .slice(0, 6) // ダミーを6つ選ぶ
-    .map(({ id, description, points }) => ({ id, description, points }));
-
-  const candidates = [...actualRules.map(({ id, description, points }) => ({ id, description, points })), ...dummyRules];
-  return candidates.sort(() => 0.5 - Math.random()); // 実際のルールとダミーをシャッフル
-}
-
-// ダミーのルール説明を生成する関数 (ヒント用)
-function generateDummyRuleDescriptions(allRules: Omit<HiddenRule, 'achievedByPlayer'>[], excludeRule: HiddenRule, count: number): string[] {
-  const candidates = allRules.filter(rule => rule.id !== excludeRule.id);
-  const shuffled = [...candidates].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, count).map(rule => rule.description);
-}
 
 // ゲーム状態をルーム内の全クライアントに送信
 function broadcastGameState(roomCode: string) {
@@ -585,7 +347,7 @@ app.post('/api/check-hidden-rule', async (req: Request, res: Response) => {
       res.status(400).json({ result: false, error: 'このルールIDはAPI判定に未対応です' });
       return;
   }
-  const result = await callGeminiAPIServer(prompt);
+  const result = await callGeminiAPIServer(prompt, process.env.GEMINI_API_KEY); // APIキーを渡す
   res.json({ result });
   return;
 });
