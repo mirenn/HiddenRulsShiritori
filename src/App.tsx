@@ -278,7 +278,7 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
               onChange={handleInputChange}
               className={`flex-1 px-4 py-3 border rounded-l-lg focus:outline-none focus:ring-2 ${isMyTurn ? 'focus:ring-indigo-500 border-gray-300' : 'bg-gray-100 border-gray-200 text-gray-500'}`}
               disabled={!isMyTurn}
-              placeholder={isMyTurn ? "単語を入力" : "相手のターンです..."}
+              placeholder={isMyTurn ? "ひらがなで単語を入力" : "相手のターンです..."}
             />
             <button
               type="submit"
