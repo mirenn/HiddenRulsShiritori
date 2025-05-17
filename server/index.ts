@@ -265,7 +265,8 @@ wss.on('connection', (ws: WebSocket) => {
         let pointsGainedThisTurn = 0;
         const achievedRulesInfo: { ruleId: string; description: string; points: number; }[] = [];
         for (const rule of gameState.hiddenRules) {
-          if (rule.achievedByPlayer === null || rule.achievedByPlayer === playerName) { // まだ誰も達成していないか、自分が達成済みのルールのみポイント加算のチャンス
+          // 他のプレイヤーが達成したルールでもポイント獲得できるように条件を変更
+          // if (rule.achievedByPlayer === null || rule.achievedByPlayer === playerName) { 
             let ruleMet = false;
             if (rule.needsApi && rule.checkFunction) {
               ruleMet = await rule.checkFunction(word, process.env.GEMINI_API_KEY);
@@ -285,7 +286,7 @@ wss.on('connection', (ws: WebSocket) => {
               }
               achievedRulesInfo.push({ ruleId: rule.id, description: rule.description, points: rule.points});
             }
-          }
+          // }
         }
         
         // ポイント加算
