@@ -259,7 +259,7 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
                 <span className="font-bold text-lg bg-white px-3 py-1 rounded-full shadow-sm text-indigo-700">{gameState.scores[player]} pt</span>
               </div>
               <div className="mt-1 text-sm text-gray-600">
-                言った単語数: {gameState.wordsSaidCount?.[player] || 0} / 7 {/* 変更 */}
+                残りターン数: {7 - (gameState.wordsSaidCount?.[player] || 0)}
               </div>
               <div className="mt-2">
                 <RatingDisplay playerName={player} />
