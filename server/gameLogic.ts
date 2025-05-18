@@ -193,7 +193,6 @@ export async function processPlayerWord(
     let pointsGainedThisTurn = 0;
     const achievedRulesInfo: { ruleId: string; description: string; points: number; }[] = [];
     for (const rule of gameState.hiddenRules) {
-      if (!rule.achievedByPlayer) {
         let ruleCheckResult = false;
         if (rule.checkFunction) {
           if (rule.needsApi) {
@@ -212,12 +211,8 @@ export async function processPlayerWord(
 
         if (ruleCheckResult) {
             pointsGainedThisTurn += rule.points;
-            if (rule.achievedByPlayer === null) {
-                rule.achievedByPlayer = playerName;
-            }
             achievedRulesInfo.push({ ruleId: rule.id, description: rule.description, points: rule.points });
         }
-      }
     }
 
     let hintInfo: { hintTargetRuleId: string; options: string[]; message: string } | undefined = undefined;
