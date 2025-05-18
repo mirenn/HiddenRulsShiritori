@@ -91,7 +91,7 @@ export const allServerRules: Omit<HiddenRule, 'achievedByPlayer'>[] = [
   { id: 'rule5', description: '色を表す単語', points: 1, needsApi: true, checkFunction: async (word, apiKey, gameState) => await callGeminiAPIServer(`「${word}」は色を表す単語ですか？ はい、いいえで答えてください。`, apiKey, gameState) },
   { id: 'rule6', description: 'ひらがな5文字以上の単語', points: 2, checkFunction: (word) => word.length >= 5 && /^[ぁ-んー]+$/.test(word) },
   { id: 'rule8', description: '「り」を含む単語', points: 1, checkFunction: (word) => word.includes('り') },
-  { id: 'rule9', description: '濁音もしくは半濁音を含む単語', points: 2, checkFunction: (word) => /[\u3099\u309A]/.test(word) },
+  { id: 'rule9', description: '濁音もしくは半濁音を含む単語', points: 1, checkFunction: (word) => /[\u3099\u309A]/.test(word) },
   { id: 'rule11', description: '植物の名前', points: 1, needsApi: true, checkFunction: async (word, apiKey, gameState) => await callGeminiAPIServer(`「${word}」は植物の名前ですか？ はい、いいえで答えてください。`, apiKey, gameState) },
   { id: 'rule12', description: '乗り物の名前', points: 1, needsApi: true, checkFunction: async (word, apiKey, gameState) => await callGeminiAPIServer(`「${word}」は乗り物の名前ですか？ はい、いいえで答えてください。`, apiKey, gameState) },
   { id: 'rule13', description: '同じ文字を2つ含む単語 (例:ばなな)', points: 2, checkFunction: (word) => /(\p{L}).*\1/u.test(word) },
@@ -105,6 +105,8 @@ export const allServerRules: Omit<HiddenRule, 'achievedByPlayer'>[] = [
   { id: 'rule23', description: '夏を連想させる言葉', points: 1, needsApi: true, checkFunction: async (word, apiKey, gameState) => await callGeminiAPIServer(`「${word}」は夏を連想させる言葉ですか？ はい、いいえで答えてください。`, apiKey, gameState) },
   { id: 'rule24', description: '前の単語と関連性の高い言葉', points: 2, needsApi: true, checkFunction: async (word, previousWord, gameState) => await callGeminiAPIServer(`「${word}」は「${previousWord}」と関連性の高い言葉ですか？ はい、いいえで答えてください。`, process.env.GEMINI_API_KEY, gameState) }, // APIキーの渡し方を修正
   { id: 'rule25', description: '前の単語より文字数が多い言葉', points: 2, checkFunction: (word, previousWord) => !!previousWord && word.length > previousWord.length },
+  { id: 'rule26', description: '体の部位', points: 1, needsApi: true, checkFunction: async (word, apiKey, gameState) => await callGeminiAPIServer(`「${word}」は体の部位を表す言葉ですか？ はい、いいえで答えてください。`, apiKey, gameState) },
+  { id: 'rule27', description: '伸ばし棒（長音）を含む単語', points: 1, checkFunction: (word) => word.includes('ー') },
 ];
 
 // 隠しルールを生成する関数

@@ -8,7 +8,7 @@ export const allHiddenRules: Omit<HiddenRule, 'achievedByPlayer' | 'checkFunctio
   { id: 'rule5', description: '色を表す単語', points: 1 },
   { id: 'rule6', description: 'ひらがな5文字以上の単語', points: 2 },
   { id: 'rule8', description: '「り」を含む単語', points: 1 },
-  { id: 'rule9', description: '濁音もしくは半濁音を含む単語', points: 2 },
+  { id: 'rule9', description: '濁音もしくは半濁音を含む単語', points: 1 },
   { id: 'rule11', description: '植物の名前', points: 1 },
   { id: 'rule12', description: '乗り物の名前', points: 1 },
   { id: 'rule13', description: '同じ文字を2つ含む単語 (例: ばなな)', points: 2 },
@@ -22,6 +22,8 @@ export const allHiddenRules: Omit<HiddenRule, 'achievedByPlayer' | 'checkFunctio
   { id: 'rule23', description: '夏を連想させる言葉', points: 1 },
   { id: 'rule24', description: '前の単語と関連性の高い言葉', points: 2 },
   { id: 'rule25', description: '前の単語より文字数が多い言葉', points: 2 },
+  { id: 'rule26', description: '体の部位', points: 1 },
+  { id: 'rule27', description: '伸ばし棒（長音）を含む単語', points: 1 },
 ];
 
 /**
