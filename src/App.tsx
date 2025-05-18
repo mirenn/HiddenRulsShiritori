@@ -300,16 +300,21 @@ function ShiritoriGame({ roomCode, playerName }: { roomCode: string; playerName:
             ) : (
               <ul className="space-y-2">
                 {gameState.history.slice().reverse().map((word, i) => {
-                  // Note: index `i` here is from the reversed array.
-                  // Original logic: const playerIndex = i % gameState.players.length;
-                  // With reverse, if history length is H, original index is H - 1 - i.
                   const originalIndex = gameState.history.length - 1 - i;
                   const playerIndex = originalIndex % gameState.players.length;
-                  const isCurrentPlayer = gameState.players[playerIndex] === playerName;
+                  const player = gameState.players[playerIndex];
+                  const detail = gameState.historyDetails?.[originalIndex];
                   return (
-                    <li key={originalIndex} className={`px-3 py-2 rounded-lg ${isCurrentPlayer ? 'bg-blue-50 text-blue-800' : 'bg-white text-gray-800'} shadow-sm`}>
-                      <span className={`font-bold mr-2 ${isCurrentPlayer ? 'text-blue-700' : 'text-gray-700'}`}>{gameState.players[playerIndex]}:</span>
-                      <span>{word}</span>
+                    <li key={originalIndex} className={`px-3 py-2 rounded-lg ${player === playerName ? 'bg-blue-50' : 'bg-white'} shadow-sm`}>
+                      <div className="flex items-center justify-between">
+                        <span className={`font-bold mr-2 ${player === playerName ? 'text-blue-700' : 'text-gray-700'}`}>{player}:</span>
+                        <span className="text-gray-800">{word}</span>
+                        {/* ポイント表示 */}
+                        {detail && detail.points > 0 && (
+                          <span className="ml-2 text-yellow-600 font-semibold">+{detail.points}pt</span>
+                        )}
+                      </div>
+                      {/* 達成ルールの表示はゲーム終了時のみとするため、ここでは表示しない */}
                     </li>
                   );
                 })}
